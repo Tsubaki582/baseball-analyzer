@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>野球分析アプリ</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- ホーム画面 -->
+    <div id="homeScreen" class="screen active">
+        <div class="screen-content">
+            <div class="app-header">
+                <h1 class="app-title">野球分析アプリ</h1>
+                <p class="app-subtitle">試合データを1球ずつ記録・分析</p>
+            </div>
+
+            <div class="home-buttons">
+                <button class="btn-primary btn-large" id="btnNewGame">
+                    <span class="btn-icon">➕</span>
+                    新しい試合を始める
+                </button>
+                <button class="btn-secondary btn-large" id="btnPastGames">
+                    <span class="btn-icon">📊</span>
+                    過去の試合
+                </button>
+                <button class="btn-secondary btn-large" id="btnPlayerManagement">
+                    <span class="btn-icon">👥</span>
+                    選手管理
+                </button>
+                <button class="btn-secondary btn-large" id="btnAnalysis">
+                    <span class="btn-icon">📈</span>
+                    分析
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 試合前設定画面 -->
+    <div id="matchSetupScreen" class="screen">
+        <div class="screen-header">
+            <button class="btn-back" id="backFromSetup">← 戻る</button>
+            <h2>試合前設定</h2>
+            <div></div>
+        </div>
+
+        <div class="screen-content">
+            <div class="card">
+                <h3>試合情報</h3>
+                <div class="form-group">
+                    <label>試合日</label>
+                    <input type="date" id="matchDate" class="form-input">
+                </div>
+                <div class="form-group">
+                    <label>対戦相手</label>
+                    <input type="text" id="opponent" class="form-input" placeholder="大学名など">
+                </div>
+                <div class="form-group">
+                    <label>球場</label>
+                    <input type="text" id="stadium" class="form-input" placeholder="野球場名">
+                </div>
+                <div class="form-group">
+                    <label>大会名</label>
+                    <input type="text" id="tournament" class="form-input" placeholder="リーグ名など">
+                </div>
+                <div class="form-group">
+                    <label>攻撃順序</label>
+                    <div class="radio-group">
+                        <label class="radio-label">
+                            <input type="radio" name="order" value="home" checked>
+                            先攻（自チーム先）
+                        </label>
+                        <label class="radio-label">
+                            <input type="radio" name="order" value="away">
+                            後攻（相手先）
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="button-group">
+                <button class="btn-primary" id="proceedToTeamSetup">次へ: チーム設定</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- チーム設定画面 -->
+    <div id="teamSetupScreen" class="screen">
+        <div class="screen-header">
+            <button class="btn-back" id="backFromTeamSetup">← 戻る</button>
+            <h2>チーム設定</h2>
+            <div></div>
+        </div>
+
+        <div class="screen-content">
+            <div class="tab-group">
+                <button class="tab-button active" data-tab="own-team">自チーム</button>
+                <button class="tab-button" data-tab="opponent-team">相手チーム</button>
+            </div>
+
+            <!-- 自チーム選手一覧 -->
+            <div id="ownTeamTab" class="tab-content active">
+                <div class="card">
+                    <div class="team-name-section">
+                        <h3>自チーム名</h3>
+                        <input type="text" id="ownTeamName" class="form-input" placeholder="チーム名を入力">
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3>スタメン設定 (9人)</h3>
+                    <div id="ownTeamLineup" class="lineup-list"></div>
+                    <button class="btn-secondary" id="addOwnPlayer">+ 選手を追加</button>
+                </div>
+
+                <div class="card">
+                    <h3>控え選手</h3>
+                    <div id="ownTeamBench" class="bench-list"></div>
+                    <button class="btn-secondary" id="addOwnBench">+ 控え選手を追加</button>
+                </div>
+            </div>
+
+            <!-- 相手チーム選手一覧 -->
+            <div id="opponentTeamTab" class="tab-content">
+                <div class="card">
+                    <div class="team-name-section">
+                        <h3>相手チーム名</h3>
+                        <input type="text" id="opponentTeamName" class="form-input" placeholder="チーム名を入力">
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3>スタメン設定 (9人)</h3>
+                    <div id="opponentTeamLineup" class="lineup-list"></div>
+                    <button class="btn-secondary" id="addOpponentPlayer">+ 選手を追加</button>
+                </div>
+
+                <div class="card">
+                    <h3>控え選手</h3>
+                    <div id="opponentTeamBench" class="bench-list"></div>
+                    <button class="btn-secondary" id="addOpponentBench">+ 控え選手を追加</button>
+                </div>
+            </div>
+
+            <div class="button-group">
+                <button class="btn-primary" id="startMatch">試合を開始する</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 選手追加モーダル -->
+    <div id="playerModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="playerModalTitle">選手を追加</h3>
+                <button class="btn-close" id="closePlayerModal">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>背番号</label>
+                    <input type="number" id="playerNumber" class="form-input" min="1" max="99">
+                </div>
+                <div class="form-group">
+                    <label>選手名</label>
+                    <input type="text" id="playerName" class="form-input" placeholder="名前を入力">
+                </div>
+                <div class="form-group">
+                    <label>打法</label>
+                    <select id="playerBatting" class="form-input">
+                        <option value="">選択してください</option>
+                        <option value="right">右打ち</option>
+                        <option value="left">左打ち</option>
+                        <option value="switch">両打ち</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>投法</label>
+                    <select id="playerThrow" class="form-input">
+                        <option value="">選択してください</option>
+                        <option value="right">右投げ</option>
+                        <option value="left">左投げ</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>守備位置</label>
+                    <select id="playerPosition" class="form-input">
+                        <option value="">選択してください</option>
+                        <option value="P">投手</option>
+                        <option value="C">捕手</option>
+                        <option value="1B">一塁手</option>
+                        <option value="2B">二塁手</option>
+                        <option value="3B">三塁手</option>
+                        <option value="SS">遊撃手</option>
+                        <option value="LF">左翼手</option>
+                        <option value="CF">中堅手</option>
+                        <option value="RF">右翼手</option>
+                        <option value="DH">DH</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" id="cancelPlayerModal">キャンセル</button>
+                <button class="btn-primary" id="confirmPlayerModal">追加する</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 試合入力画面 -->
+    <div id="gameInputScreen" class="screen">
+        <div class="screen-header">
+            <button class="btn-back" id="backFromGameInput">← 試合終了</button>
+            <h2 id="inningDisplay">1回表</h2>
+            <button class="btn-secondary" id="showSettings">⚙️</button>
+        </div>
+
+        <div class="screen-content">
+            <!-- スコア情報 -->
+            <div class="score-card">
+                <div class="score-item">
+                    <div class="team-name" id="scoreOwnTeam">自チーム</div>
+                    <div class="score-value" id="scoreOwn">0</div>
+                </div>
+                <div class="score-separator">-</div>
+                <div class="score-item">
+                    <div class="team-name" id="scoreOpponentTeam">相手</div>
+                    <div class="score-value" id="scoreOpponent">0</div>
+                </div>
+            </div>
+
+            <!-- 試合状況 -->
+            <div class="game-status-card">
+                <div class="status-row">
+                    <div class="status-item">
+                        <span class="status-label">イニング</span>
+                        <span class="status-value" id="statusInning">1</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="status-label">表/裏</span>
+                        <span class="status-value" id="statusOrder">表</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="status-label">アウト</span>
+                        <span class="status-value" id="statusOuts">0</span>
+                    </div>
+                </div>
+                <div class="status-row">
+                    <div class="status-item">
+                        <span class="status-label">ボール</span>
+                        <span class="status-value" id="statusBalls">0</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="status-label">ストライク</span>
+                        <span class="status-value" id="statusStrikes">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 現在の打者・投手 -->
+            <div class="player-card">
+                <div class="player-section">
+                    <h4>現在の打者</h4>
+                    <div class="player-info" id="currentBatterInfo">
+                        <div class="player-number" id="bitterNumber">-</div>
+                        <div class="player-details">
+                            <div class="player-name" id="bitterName">未設定</div>
+                            <div class="player-meta" id="bitterMeta">-</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="player-section">
+                    <h4>現在の投手</h4>
+                    <div class="player-info" id="currentPitcherInfo">
+                        <div class="player-number" id="pitcherNumber">-</div>
+                        <div class="player-details">
+                            <div class="player-name" id="pitcherName">未設定</div>
+                            <div class="player-meta" id="pitcherMeta">-</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 走者状況 -->
+            <div class="bases-card">
+                <h4>走者状況</h4>
+                <div class="bases-display">
+                    <div class="base" id="base3">
+                        <div class="base-label">三塁</div>
+                        <div class="base-runner" id="runner3">-</div>
+                    </div>
+                    <div class="base" id="base2">
+                        <div class="base-label">二塁</div>
+                        <div class="base-runner" id="runner2">-</div>
+                    </div>
+                    <div class="base" id="base1">
+                        <div class="base-label">一塁</div>
+                        <div class="base-runner" id="runner1">-</div>
+                    </div>
+                </div>
+                <button class="btn-secondary" id="editRunners">走者を編集</button>
+            </div>
+
+            <!-- 投球入力セクション -->
+            <div class="input-section">
+                <h3>投球を記録</h3>
+
+                <div class="card">
+                    <h4>球種</h4>
+                    <div class="pitch-type-grid">
+                        <button class="pitch-btn" data-type="straight">ストレート</button>
+                        <button class="pitch-btn" data-type="slider">スライダー</button>
+                        <button class="pitch-btn" data-type="curve">カーブ</button>
+                        <button class="pitch-btn" data-type="fork">フォーク</button>
+                        <button class="pitch-btn" data-type="changeup">チェンジアップ</button>
+                        <button class="pitch-btn" data-type="cutter">カットボール</button>
+                        <button class="pitch-btn" data-type="twoSeam">ツーシーム</button>
+                        <button class="pitch-btn" data-type="shoot">シュート</button>
+                        <button class="pitch-btn" data-type="other">その他</button>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h4>球速</h4>
+                    <div class="form-group">
+                        <input type="number" id="pitchSpeed" class="form-input" placeholder="km/h" min="0" max="200" step="0.1">
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h4>投球コース</h4>
+                    <div class="course-toggle">
+                        <button class="perspective-btn active" data-perspective="catcher">捕手目線</button>
+                        <button class="perspective-btn" data-perspective="pitcher">投手目線</button>
+                    </div>
+                    <div class="strike-zone" id="strikeZone"></div>
+                    <div class="course-info">
+                        <p>選択したコース: <span id="selectedCourse">未選択</span></p>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h4>投球結果</h4>
+                    <div class="result-grid">
+                        <button class="result-btn" data-result="look">見逃し</button>
+                        <button class="result-btn" data-result="swing">空振り</button>
+                        <button class="result-btn" data-result="foul">ファウル</button>
+                        <button class="result-btn" data-result="ball">ボール</button>
+                        <button class="result-btn" data-result="hitByPitch">死球</button>
+                        <button class="result-btn" data-result="inPlay">インプレー</button>
+                    </div>
+                </div>
+
+                <!-- インプレー時の打球情報 -->
+                <div id="inPlaySection" class="card" style="display: none;">
+                    <h4>打球情報</h4>
+
+                    <div class="form-group">
+                        <label>打球種類</label>
+                        <div class="pitch-type-grid">
+                            <button class="hit-type-btn" data-hit="groundBall">ゴロ</button>
+                            <button class="hit-type-btn" data-hit="fly">フライ</button>
+                            <button class="hit-type-btn" data-hit="liner">ライナー</button>
+                            <button class="hit-type-btn" data-hit="popFly">ポップ</button>
+                            <button class="hit-type-btn" data-hit="bunt">バント</button>
+                            <button class="hit-type-btn" data-hit="other">その他</button>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>打球方向</label>
+                        <div class="field-diagram" id="fieldDiagram"></div>
+                        <div class="direction-info">
+                            <p>選択した方向: <span id="selectedDirection">未選択</span></p>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>打席結果</label>
+                        <select id="atBatResult" class="form-input">
+                            <option value="">選択してください</option>
+                            <option value="strikeout">三振</option>
+                            <option value="walk">四球</option>
+                            <option value="hitByPitch">死球</option>
+                            <option value="single">単打</option>
+                            <option value="double">二塁打</option>
+                            <option value="triple">三塁打</option>
+                            <option value="homerun">本塁打</option>
+                            <option value="groundOut">ゴロアウト</option>
+                            <option value="flyOut">フライアウト</option>
+                            <option value="lineOut">ライナーアウト</option>
+                            <option value="buntOut">バントアウト</option>
+                            <option value="error">エラー</option>
+                            <option value="sacrifice">犠打</option>
+                            <option value="sacFly">犠飛</option>
+                            <option value="other">その他</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group" id="outMakerGroup" style="display: none;">
+                        <label>アウト製造者</label>
+                        <select id="outMaker" class="form-input">
+                            <option value="">選択してください</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="button-group">
+                    <button class="btn-primary" id="recordPitch">投球を記録</button>
+                    <button class="btn-secondary" id="undoLastPitch">最後の投球を取消</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ボトムナビゲーション -->
+        <div class="bottom-nav">
+            <button class="nav-btn" id="navHistory">📜 履歴</button>
+            <button class="nav-btn" id="navCurrentAB">🎯 現打席</button>
+            <button class="nav-btn" id="navSettings">⚙️ 設定</button>
+        </div>
+    </div>
+
+    <!-- 投球履歴画面 -->
+    <div id="pitchHistoryScreen" class="screen">
+        <div class="screen-header">
+            <button class="btn-back" id="backFromHistory">← 戻る</button>
+            <h2>投球履歴</h2>
+            <div></div>
+        </div>
+
+        <div class="screen-content">
+            <div id="historyList" class="history-list"></div>
+        </div>
+    </div>
+
+    <!-- 現打席詳細画面 -->
+    <div id="currentAtBatScreen" class="screen">
+        <div class="screen-header">
+            <button class="btn-back" id="backFromCurrentAB">← 戻る</button>
+            <h2 id="currentABTitle">現在の打席</h2>
+            <div></div>
+        </div>
+
+        <div class="screen-content">
+            <div class="card">
+                <h3 id="currentABBatter">打者情報</h3>
+                <div class="player-detail-view" id="currentABPlayerInfo"></div>
+            </div>
+
+            <div class="card">
+                <h3>投球チャート</h3>
+                <div class="strike-zone-chart" id="currentABStrikeZone"></div>
+            </div>
+
+            <div class="card">
+                <h3>投球順序</h3>
+                <div id="currentABPitches" class="pitch-sequence"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 走者編集モーダル -->
+    <div id="runnersModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>走者を編集</h3>
+                <button class="btn-close" id="closeRunnersModal">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="base-edit-section">
+                    <h4>一塁</h4>
+                    <select id="runner1Select" class="form-input">
+                        <option value="">走者なし</option>
+                    </select>
+                </div>
+                <div class="base-edit-section">
+                    <h4>二塁</h4>
+                    <select id="runner2Select" class="form-input">
+                        <option value="">走者なし</option>
+                    </select>
+                </div>
+                <div class="base-edit-section">
+                    <h4>三塁</h4>
+                    <select id="runner3Select" class="form-input">
+                        <option value="">走者なし</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" id="cancelRunnersModal">キャンセル</button>
+                <button class="btn-primary" id="confirmRunnersModal">設定</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 試合終了画面 -->
+    <div id="matchEndScreen" class="screen">
+        <div class="screen-header">
+            <div></div>
+            <h2>試合終了</h2>
+            <div></div>
+        </div>
+
+        <div class="screen-content">
+            <div class="final-score-card">
+                <div class="final-score-item">
+                    <div class="final-team-name" id="finalOwnTeam">自チーム</div>
+                    <div class="final-score-value" id="finalOwnScore">0</div>
+                </div>
+                <div class="final-separator">-</div>
+                <div class="final-score-item">
+                    <div class="final-team-name" id="finalOpponentTeam">相手</div>
+                    <div class="final-score-value" id="finalOpponentScore">0</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>試合統計</h3>
+                <div class="stat-item">
+                    <span>イニング数</span>
+                    <span id="statInnings">9</span>
+                </div>
+                <div class="stat-item">
+                    <span>総投球数</span>
+                    <span id="statTotalPitches">0</span>
+                </div>
+                <div class="stat-item">
+                    <span>総打席数</span>
+                    <span id="statTotalAtBats">0</span>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>投手成績</h3>
+                <div id="pitcherStats" class="stats-list"></div>
+            </div>
+
+            <div class="card">
+                <h3>打者成績</h3>
+                <div id="batterStats" class="stats-list"></div>
+            </div>
+
+            <div class="button-group">
+                <button class="btn-primary" id="saveMatchData">試合データを保存</button>
+                <button class="btn-secondary" id="returnHome">ホームに戻る</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 分析画面 -->
+    <div id="analysisScreen" class="screen">
+        <div class="screen-header">
+            <button class="btn-back" id="backFromAnalysis">← 戻る</button>
+            <h2>試合分析</h2>
+            <div></div>
+        </div>
+
+        <div class="screen-content">
+            <div class="card">
+                <h3>分析対象試合を選択</h3>
+                <select id="analysisMatchSelect" class="form-input">
+                    <option value="">試合を選択してください</option>
+                </select>
+            </div>
+
+            <div id="analysisContent" style="display: none;">
+                <div class="tab-group">
+                    <button class="tab-button active" data-tab="batter-analysis">打者分析</button>
+                    <button class="tab-button" data-tab="pitcher-analysis">投手分析</button>
+                    <button class="tab-button" data-tab="hit-direction">打球方向</button>
+                    <button class="tab-button" data-tab="course-analysis">コース分析</button>
+                </div>
+
+                <!-- 打者分析 -->
+                <div id="batterAnalysisTab" class="tab-content active">
+                    <div id="batterList" class="analysis-list"></div>
+                </div>
+
+                <!-- 投手分析 -->
+                <div id="pitcherAnalysisTab" class="tab-content">
+                    <div id="pitcherList" class="analysis-list"></div>
+                </div>
+
+                <!-- 打球方向分析 -->
+                <div id="hitDirectionTab" class="tab-content">
+                    <div class="card">
+                        <h4>打者を選択</h4>
+                        <select id="directionBatterSelect" class="form-input">
+                            <option value="">打者を選択</option>
+                        </select>
+                    </div>
+                    <div class="card">
+                        <h4>打球方向分析</h4>
+                        <div class="field-chart" id="fieldChart"></div>
+                        <div id="directionStats" class="direction-stats"></div>
+                    </div>
+                </div>
+
+                <!-- コース分析 -->
+                <div id="courseAnalysisTab" class="tab-content">
+                    <div class="card">
+                        <h4>打者を選択</h4>
+                        <select id="courseBatterSelect" class="form-input">
+                            <option value="">打者を選択</option>
+                        </select>
+                    </div>
+                    <div class="card">
+                        <h4>投球位置分析</h4>
+                        <div class="strike-zone-chart" id="courseStrikeZone"></div>
+                        <div id="courseStats" class="course-stats"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 過去の試合画面 -->
+    <div id="pastGamesScreen" class="screen">
+        <div class="screen-header">
+            <button class="btn-back" id="backFromPastGames">← 戻る</button>
+            <h2>過去の試合</h2>
+            <div></div>
+        </div>
+
+        <div class="screen-content">
+            <div id="pastGamesList" class="games-list"></div>
+        </div>
+    </div>
+
+    <!-- 選手管理画面 -->
+    <div id="playerManagementScreen" class="screen">
+        <div class="screen-header">
+            <button class="btn-back" id="backFromPlayerMgmt">← 戻る</button>
+            <h2>選手管理</h2>
+            <div></div>
+        </div>
+
+        <div class="screen-content">
+            <div class="card">
+                <h3>登録済みチーム</h3>
+                <div id="teamsList" class="teams-list"></div>
+            </div>
+
+            <div class="button-group">
+                <button class="btn-secondary" id="addNewTeam">+ 新しいチームを作成</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="utils.js"></script>
+    <script src="storage.js"></script>
+    <script src="ui.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
