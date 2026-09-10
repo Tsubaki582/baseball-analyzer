@@ -1,0 +1,1289 @@
+/* ============================================
+   野球分析アプリ - スタイルシート
+   ============================================ */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+:root {
+    --primary-blue: #0066cc;
+    --primary-blue-dark: #0052a3;
+    --primary-blue-light: #e6f2ff;
+    --secondary-green: #00aa44;
+    --secondary-red: #ff3333;
+    --secondary-orange: #ff9900;
+    --text-primary: #1a1a1a;
+    --text-secondary: #666666;
+    --border-color: #e0e0e0;
+    --bg-white: #ffffff;
+    --bg-light-gray: #f8f9fa;
+    --shadow-light: 0 2px 8px rgba(0, 0, 0, 0.08);
+    --shadow-medium: 0 4px 16px rgba(0, 0, 0, 0.12);
+    --radius-normal: 12px;
+    --radius-large: 16px;
+}
+
+html, body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Hiragino Kaku Gothic ProN', 'ヒラギノ角ゴ ProN', sans-serif;
+    background-color: var(--bg-white);
+    color: var(--text-primary);
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+}
+
+body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* ============================================
+   スクリーン管理
+   ============================================ */
+
+.screen {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: var(--bg-white);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    z-index: 10;
+}
+
+.screen.active {
+    display: flex;
+    flex-direction: column;
+}
+
+.screen-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px;
+    border-bottom: 1px solid var(--border-color);
+    background-color: var(--bg-white);
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    gap: 12px;
+}
+
+.screen-header h2 {
+    font-size: 18px;
+    font-weight: 600;
+    text-align: center;
+    flex: 1;
+}
+
+.screen-content {
+    flex: 1;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 16px;
+    padding-bottom: 80px;
+}
+
+/* ============================================
+   ボタン
+   ============================================ */
+
+button {
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.btn-primary {
+    background-color: var(--primary-blue);
+    color: white;
+    padding: 12px 24px;
+    border-radius: var(--radius-normal);
+    box-shadow: var(--shadow-light);
+}
+
+.btn-primary:active {
+    background-color: var(--primary-blue-dark);
+    transform: scale(0.98);
+}
+
+.btn-secondary {
+    background-color: var(--bg-light-gray);
+    color: var(--text-primary);
+    padding: 12px 24px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-normal);
+}
+
+.btn-secondary:active {
+    background-color: #e0e0e0;
+}
+
+.btn-large {
+    width: 100%;
+    padding: 18px;
+    font-size: 18px;
+    border-radius: var(--radius-large);
+}
+
+.btn-back {
+    padding: 8px 12px;
+    font-size: 14px;
+    background: none;
+    color: var(--primary-blue);
+    text-align: left;
+    min-width: 60px;
+}
+
+.btn-close {
+    padding: 8px;
+    font-size: 24px;
+    background: none;
+    color: var(--text-secondary);
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-icon {
+    margin-right: 8px;
+    font-size: 20px;
+}
+
+.button-group {
+    display: flex;
+    gap: 8px;
+    margin-top: 16px;
+}
+
+.button-group button {
+    flex: 1;
+}
+
+/* ============================================
+   ホーム画面
+   ============================================ */
+
+.app-header {
+    text-align: center;
+    margin-bottom: 32px;
+    padding: 20px 0;
+}
+
+.app-title {
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--primary-blue);
+    margin-bottom: 8px;
+}
+
+.app-subtitle {
+    font-size: 14px;
+    color: var(--text-secondary);
+}
+
+.home-buttons {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+}
+
+/* ============================================
+   カード
+   ============================================ */
+
+.card {
+    background-color: var(--bg-white);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-large);
+    padding: 16px;
+    margin-bottom: 16px;
+    box-shadow: var(--shadow-light);
+}
+
+.card h3,
+.card h4 {
+    margin-bottom: 16px;
+    font-size: 16px;
+    color: var(--text-primary);
+}
+
+/* ============================================
+   スコアカード
+   ============================================ */
+
+.score-card {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    background: linear-gradient(135deg, var(--primary-blue-light) 0%, #f0f8ff 100%);
+    border-radius: var(--radius-large);
+    padding: 24px;
+    margin-bottom: 16px;
+    border: 2px solid var(--primary-blue);
+}
+
+.score-item {
+    flex: 1;
+    text-align: center;
+}
+
+.team-name {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+}
+
+.score-value {
+    font-size: 48px;
+    font-weight: 700;
+    color: var(--primary-blue);
+}
+
+.score-separator {
+    font-size: 36px;
+    color: var(--text-secondary);
+}
+
+/* ============================================
+   ゲーム状況
+   ============================================ */
+
+.game-status-card {
+    background-color: var(--bg-light-gray);
+    border-radius: var(--radius-large);
+    padding: 16px;
+    margin-bottom: 16px;
+    border: 1px solid var(--border-color);
+}
+
+.status-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.status-row:last-child {
+    margin-bottom: 0;
+}
+
+.status-item {
+    background-color: white;
+    border-radius: 8px;
+    padding: 12px;
+    text-align: center;
+    border: 1px solid var(--border-color);
+}
+
+.status-label {
+    display: block;
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-bottom: 4px;
+}
+
+.status-value {
+    display: block;
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--primary-blue);
+}
+
+/* ============================================
+   プレイヤーカード
+   ============================================ */
+
+.player-card {
+    background-color: white;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-large);
+    overflow: hidden;
+    margin-bottom: 16px;
+    box-shadow: var(--shadow-light);
+}
+
+.player-section {
+    padding: 16px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.player-section:last-child {
+    border-bottom: none;
+}
+
+.player-section h4 {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin-bottom: 12px;
+}
+
+.player-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.player-number {
+    background-color: var(--primary-blue);
+    color: white;
+    width: 48px;
+    height: 48px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 20px;
+}
+
+.player-details {
+    flex: 1;
+}
+
+.player-name {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.player-meta {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-top: 4px;
+}
+
+/* ============================================
+   塁表示
+   ============================================ */
+
+.bases-card {
+    background-color: white;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-large);
+    padding: 16px;
+    margin-bottom: 16px;
+    box-shadow: var(--shadow-light);
+}
+
+.bases-card h4 {
+    margin-bottom: 16px;
+}
+
+.bases-display {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.base {
+    background-color: var(--bg-light-gray);
+    border-radius: 8px;
+    padding: 12px;
+    text-align: center;
+    border: 2px solid var(--border-color);
+}
+
+.base:nth-child(1) {
+    grid-column: 2;
+    grid-row: 1;
+}
+
+.base:nth-child(2) {
+    grid-column: 1;
+    grid-row: 1;
+}
+
+.base:nth-child(3) {
+    grid-column: 2;
+    grid-row: 1;
+    margin-top: 12px;
+}
+
+.base-label {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-bottom: 4px;
+}
+
+.base-runner {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--primary-blue);
+}
+
+/* ============================================
+   入力セクション
+   ============================================ */
+
+.input-section {
+    margin-bottom: 16px;
+}
+
+.input-section h3 {
+    margin-bottom: 16px;
+    font-size: 18px;
+    color: var(--text-primary);
+}
+
+/* ============================================
+   フォーム要素
+   ============================================ */
+
+.form-group {
+    margin-bottom: 16px;
+}
+
+.form-group label {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+}
+
+.form-input,
+select {
+    width: 100%;
+    padding: 12px;
+    font-size: 16px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background-color: white;
+    color: var(--text-primary);
+    -webkit-appearance: none;
+    appearance: none;
+    font-family: inherit;
+}
+
+.form-input:focus,
+select:focus {
+    outline: none;
+    border-color: var(--primary-blue);
+    box-shadow: 0 0 0 3px var(--primary-blue-light);
+}
+
+.radio-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.radio-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 8px;
+    transition: background-color 0.2s ease;
+}
+
+.radio-label:active {
+    background-color: var(--primary-blue-light);
+}
+
+.radio-label input[type="radio"] {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+}
+
+/* ============================================
+   球種選択ボタン
+   ============================================ */
+
+.pitch-type-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.pitch-btn,
+.hit-type-btn,
+.result-btn {
+    padding: 12px;
+    font-size: 13px;
+    background-color: var(--bg-light-gray);
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    color: var(--text-primary);
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.pitch-btn:active,
+.hit-type-btn:active,
+.result-btn:active {
+    background-color: var(--primary-blue);
+    color: white;
+    border-color: var(--primary-blue);
+}
+
+.pitch-btn.selected,
+.hit-type-btn.selected,
+.result-btn.selected {
+    background-color: var(--primary-blue);
+    color: white;
+    border-color: var(--primary-blue);
+}
+
+/* ============================================
+   視点切り替え
+   ============================================ */
+
+.course-toggle,
+.perspective-btn {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.perspective-btn {
+    flex: 1;
+    padding: 12px;
+    background-color: var(--bg-light-gray);
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+.perspective-btn.active {
+    background-color: var(--primary-blue);
+    color: white;
+    border-color: var(--primary-blue);
+}
+
+/* ============================================
+   ストライクゾーン
+   ============================================ */
+
+.strike-zone {
+    background-color: var(--bg-light-gray);
+    border-radius: 8px;
+    aspect-ratio: 1;
+    position: relative;
+    margin-bottom: 16px;
+    border: 2px solid var(--border-color);
+    overflow: hidden;
+}
+
+.strike-zone svg {
+    width: 100%;
+    height: 100%;
+}
+
+.zone-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 4px;
+    padding: 8px;
+    aspect-ratio: 1;
+}
+
+.zone-cell {
+    background-color: white;
+    border: 2px solid var(--border-color);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.zone-cell:active {
+    background-color: var(--primary-blue-light);
+    border-color: var(--primary-blue);
+}
+
+.zone-cell.selected {
+    background-color: var(--primary-blue);
+    border-color: var(--primary-blue);
+}
+
+.zone-cell.selected::after {
+    content: '✓';
+    position: absolute;
+    color: white;
+    font-weight: 700;
+    font-size: 24px;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.zone-cell-label {
+    font-size: 10px;
+    color: var(--text-secondary);
+    position: absolute;
+    bottom: 2px;
+    right: 2px;
+}
+
+.course-info,
+.direction-info {
+    font-size: 14px;
+    color: var(--text-secondary);
+    text-align: center;
+    margin-bottom: 16px;
+}
+
+.course-info span,
+.direction-info span {
+    color: var(--primary-blue);
+    font-weight: 600;
+}
+
+/* ============================================
+   グラウンド図
+   ============================================ */
+
+.field-diagram {
+    background-color: var(--bg-light-gray);
+    border-radius: 8px;
+    aspect-ratio: 1;
+    position: relative;
+    margin-bottom: 16px;
+    border: 2px solid var(--border-color);
+    overflow: hidden;
+}
+
+.field-diagram svg {
+    width: 100%;
+    height: 100%;
+}
+
+.direction-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+    padding: 8px;
+}
+
+.direction-cell {
+    background-color: white;
+    border: 2px solid var(--border-color);
+    border-radius: 6px;
+    padding: 8px;
+    text-align: center;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.direction-cell:active {
+    background-color: var(--primary-blue-light);
+    border-color: var(--primary-blue);
+}
+
+.direction-cell.selected {
+    background-color: var(--primary-blue);
+    color: white;
+    border-color: var(--primary-blue);
+}
+
+/* ============================================
+   結果グリッド
+   ============================================ */
+
+.result-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+/* ============================================
+   タブ
+   ============================================ */
+
+.tab-group {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+    border-bottom: 2px solid var(--border-color);
+    overflow-x: auto;
+}
+
+.tab-button {
+    padding: 12px 16px;
+    font-size: 14px;
+    background: none;
+    color: var(--text-secondary);
+    border-bottom: 3px solid transparent;
+    font-weight: 600;
+    white-space: nowrap;
+    transition: all 0.2s ease;
+}
+
+.tab-button.active {
+    color: var(--primary-blue);
+    border-bottom-color: var(--primary-blue);
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+/* ============================================
+   チーム設定
+   ============================================ */
+
+.team-name-section {
+    margin-bottom: 16px;
+}
+
+.team-name-section h3 {
+    margin-bottom: 8px;
+}
+
+.lineup-list,
+.bench-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.player-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background-color: var(--bg-light-gray);
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+}
+
+.player-item-number {
+    background-color: var(--primary-blue);
+    color: white;
+    width: 36px;
+    height: 36px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 14px;
+}
+
+.player-item-info {
+    flex: 1;
+}
+
+.player-item-name {
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--text-primary);
+}
+
+.player-item-meta {
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.player-item-actions {
+    display: flex;
+    gap: 6px;
+}
+
+.player-item-btn {
+    padding: 6px 12px;
+    font-size: 12px;
+    background-color: white;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    color: var(--text-primary);
+}
+
+.player-item-btn.remove {
+    background-color: #ffe6e6;
+    color: var(--secondary-red);
+    border-color: var(--secondary-red);
+}
+
+/* ============================================
+   モーダル
+   ============================================ */
+
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 50;
+    align-items: flex-end;
+    justify-content: center;
+}
+
+.modal.active {
+    display: flex;
+}
+
+.modal-content {
+    background-color: white;
+    border-radius: var(--radius-large) var(--radius-large) 0 0;
+    width: 100%;
+    max-width: 600px;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: var(--shadow-medium);
+    animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(100%);
+    }
+    to {
+        transform: translateY(0);
+    }
+}
+
+.modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px;
+    border-bottom: 1px solid var(--border-color);
+    gap: 12px;
+}
+
+.modal-header h3 {
+    flex: 1;
+    font-size: 18px;
+    margin: 0;
+}
+
+.modal-body {
+    flex: 1;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 16px;
+}
+
+.modal-footer {
+    display: flex;
+    gap: 8px;
+    padding: 16px;
+    border-top: 1px solid var(--border-color);
+}
+
+.modal-footer button {
+    flex: 1;
+}
+
+/* ============================================
+   ボトムナビゲーション
+   ============================================ */
+
+.bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    gap: 0;
+    background-color: white;
+    border-top: 1px solid var(--border-color);
+    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.08);
+    z-index: 30;
+}
+
+.nav-btn {
+    flex: 1;
+    padding: 12px;
+    font-size: 12px;
+    background: none;
+    border: none;
+    border-radius: 0;
+    color: var(--text-secondary);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    transition: color 0.2s ease;
+}
+
+.nav-btn:active {
+    color: var(--primary-blue);
+}
+
+/* ============================================
+   履歴リスト
+   ============================================ */
+
+.history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.history-item {
+    background-color: white;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 12px;
+    box-shadow: var(--shadow-light);
+}
+
+.history-pitch-number {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+}
+
+.history-pitch-info {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 8px;
+}
+
+.history-pitch-detail {
+    font-size: 13px;
+}
+
+.history-pitch-label {
+    color: var(--text-secondary);
+    font-weight: 600;
+}
+
+.history-pitch-value {
+    color: var(--primary-blue);
+}
+
+/* ============================================
+   分析リスト
+   ============================================ */
+
+.analysis-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.analysis-item {
+    background-color: white;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 16px;
+    box-shadow: var(--shadow-light);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.analysis-item:active {
+    box-shadow: var(--shadow-medium);
+    transform: translateY(-2px);
+}
+
+.analysis-item-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+
+.analysis-item-name {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.analysis-item-number {
+    background-color: var(--primary-blue-light);
+    color: var(--primary-blue);
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.analysis-item-stats {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    font-size: 13px;
+}
+
+.stat-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.stat-label {
+    color: var(--text-secondary);
+}
+
+.stat-value {
+    font-weight: 600;
+    color: var(--primary-blue);
+}
+
+/* ============================================
+   打球方向分析
+   ============================================ */
+
+.field-chart {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1;
+    background-color: var(--bg-light-gray);
+    border-radius: 8px;
+    margin-bottom: 16px;
+    border: 2px solid var(--border-color);
+}
+
+.field-chart svg {
+    width: 100%;
+    height: 100%;
+}
+
+.direction-stats {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+}
+
+.direction-stat-item {
+    background-color: var(--primary-blue-light);
+    padding: 12px;
+    border-radius: 8px;
+    text-align: center;
+    border: 1px solid var(--primary-blue);
+}
+
+.direction-stat-label {
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.direction-stat-value {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--primary-blue);
+}
+
+/* ============================================
+   コース分析
+   ============================================ */
+
+.strike-zone-chart {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1;
+    background-color: var(--bg-light-gray);
+    border-radius: 8px;
+    margin-bottom: 16px;
+    border: 2px solid var(--border-color);
+}
+
+.strike-zone-chart svg {
+    width: 100%;
+    height: 100%;
+}
+
+.course-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.course-stat-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px;
+    background-color: var(--bg-light-gray);
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+}
+
+/* ============================================
+   最終スコア
+   ============================================ */
+
+.final-score-card {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    background: linear-gradient(135deg, var(--primary-blue-light) 0%, #f0f8ff 100%);
+    border-radius: var(--radius-large);
+    padding: 32px 24px;
+    margin-bottom: 16px;
+    border: 3px solid var(--primary-blue);
+}
+
+.final-score-item {
+    flex: 1;
+    text-align: center;
+}
+
+.final-team-name {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 12px;
+}
+
+.final-score-value {
+    font-size: 56px;
+    font-weight: 700;
+    color: var(--primary-blue);
+}
+
+.final-separator {
+    font-size: 48px;
+    color: var(--text-secondary);
+}
+
+/* ============================================
+   統計表示
+   ============================================ */
+
+.stat-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px;
+    border-bottom: 1px solid var(--border-color);
+    font-size: 14px;
+}
+
+.stat-item:last-child {
+    border-bottom: none;
+}
+
+.stat-item span:first-child {
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.stat-item span:last-child {
+    color: var(--primary-blue);
+    font-weight: 600;
+}
+
+.stats-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+/* ============================================
+   ゲームリスト
+   ============================================ */
+
+.games-list,
+.teams-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.game-item,
+.team-item {
+    background-color: white;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 16px;
+    box-shadow: var(--shadow-light);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.game-item:active,
+.team-item:active {
+    box-shadow: var(--shadow-medium);
+    transform: translateY(-2px);
+}
+
+.game-date {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+}
+
+.game-opponent {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+}
+
+.game-score {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--primary-blue);
+}
+
+/* ============================================
+   レスポンシブデザイン
+   ============================================ */
+
+@media (max-width: 380px) {
+    .pitch-type-grid,
+    .result-grid,
+    .direction-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .btn-large {
+        padding: 16px;
+        font-size: 16px;
+    }
+
+    .score-value {
+        font-size: 40px;
+    }
+
+    .final-score-value {
+        font-size: 48px;
+    }
+}
+
+@media (min-width: 768px) {
+    .screen-content {
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 24px;
+    }
+
+    .modal-content {
+        border-radius: var(--radius-large);
+    }
+
+    .bottom-nav {
+        display: none;
+    }
+}
