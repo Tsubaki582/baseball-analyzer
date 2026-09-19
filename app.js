@@ -421,7 +421,7 @@ function initializeTeamSetup() {
     const ownTeamNameInput = document.getElementById('ownTeamName');
     const opponentTeamNameInput = document.getElementById('opponentTeamName');
     const preservedOwnName = ownTeamNameInput?.value || '';
-    const preservedOpponentName = opponentTeamNameInput?.value || document.getElementById('opponent')?.value || '';
+    const preservedOpponentName = opponentTeamNameInput?.value || '';
     const ownTeamData = createEmptyTeamSetupData('own');
     const opponentTeamData = createEmptyTeamSetupData('opponent');
 
@@ -782,13 +782,11 @@ function createPositionSelect(teamType, currentPosition, lineupIndex) {
 function collectAssignedPlayerIds(teamData, context) {
     const assignedIds = new Set();
 
-    if (context.type !== 'pitcher') {
-        teamData.lineup.forEach((slot, index) => {
-            if (!slot.playerId) return;
-            if (context.type === 'lineup' && context.index === index) return;
-            assignedIds.add(slot.playerId);
-        });
-    }
+    teamData.lineup.forEach((slot, index) => {
+        if (!slot.playerId) return;
+        if (context.type === 'lineup' && context.index === index) return;
+        assignedIds.add(slot.playerId);
+    });
 
     teamData.bench.forEach((slot, index) => {
         if (!slot.playerId) return;
@@ -935,6 +933,10 @@ function findDuplicateAssignedPlayer(teamData) {
             return findTeamPlayer(teamData, playerId);
         }
         seenLineup.add(playerId);
+    }
+
+    if (teamData.pitcherId && seenLineup.has(teamData.pitcherId)) {
+        return findTeamPlayer(teamData, teamData.pitcherId);
     }
 
     for (const playerId of benchIds) {
