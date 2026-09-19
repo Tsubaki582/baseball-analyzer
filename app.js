@@ -1199,6 +1199,7 @@ function recordPitchData() {
     // ストライク/ボール数を更新
     pitchData.balls = gs.balls;
     pitchData.strikes = gs.strikes;
+    pitchData.runnersBefore = deepCopy(gs.runners);
     pitchData.runners = deepCopy(gs.runners);
     
     // 投球を記録
@@ -1218,6 +1219,10 @@ function recordPitchData() {
     } else if (gs.balls >= 4) {
         atBatFinished = true;
         processAtBatResult('walk');
+    }
+
+    if (atBatFinished) {
+        pitchData.runners = deepCopy(gs.runners);
     }
     
     updateGameDisplay();
@@ -1243,7 +1248,7 @@ function processAtBatResult(result) {
     const batter = battingTeam?.lineup[batterIndex] || null;
     
     // アウトになる結果
-    const outResults = ['strikeout', 'groundOut', 'flyOut', 'lineOut', 'buntOut', 'sacrifice'];
+    const outResults = ['strikeout', 'groundOut', 'flyOut', 'lineOut', 'buntOut', 'sacrifice', 'sacFly'];
     const scoringMap = { single: 1, double: 2, triple: 3 };
     let runsScored = 0;
     let willEndInning = false;
@@ -1258,6 +1263,8 @@ function processAtBatResult(result) {
             runsScored += advanceRunnersByBases(scoringMap[result], batter);
         } else if (result === 'walk' || result === 'hitByPitch') {
             runsScored += advanceRunnersForWalk(batter);
+        } else if (result === 'error' || result === 'fielderChoice' || result === 'other') {
+            runsScored += advanceRunnersByBases(1, batter);
         }
     }
 

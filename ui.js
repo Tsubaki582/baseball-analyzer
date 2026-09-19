@@ -565,7 +565,7 @@ function plotPitchesOnStrikeZone(containerId, pitches) {
         if (!pitch.course) return max;
         return Math.max(max, pitch.course.row, pitch.course.col);
     }, 2);
-    const gridSize = Math.max(3, maxCourse + 1);
+    const gridSize = maxCourse <= 2 ? 3 : 5;
     const cellSize = 300 / gridSize;
     svg.setAttribute('viewBox', '0 0 300 300');
     svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
