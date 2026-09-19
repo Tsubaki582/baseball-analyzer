@@ -1232,6 +1232,7 @@ function processAtBatResult(result) {
     if (!currentMatch) return;
     
     const gs = currentMatch.gameState;
+    const runnersBeforePlay = deepCopy(gs.runners);
     const battingTeam = getBattingTeam();
     const batterIndex = getCurrentBatterIndex(gs);
     const batter = battingTeam?.lineup[batterIndex] || null;
@@ -1266,7 +1267,7 @@ function processAtBatResult(result) {
         result,
         hitType: selectedHitData,
         direction: selectedDirectionData,
-        runners: deepCopy(gs.runners),
+        runners: runnersBeforePlay,
         runsScored
     });
 
@@ -1458,6 +1459,9 @@ function getRunnerSlot(base) {
 function moveRunnerBetweenBases(fromBase, toBase) {
     if (!currentMatch || !fromBase || !toBase) return;
     const runners = currentMatch.gameState.runners;
+    if (!runners[fromBase] || runners[toBase]) {
+        return;
+    }
     runners[toBase] = runners[fromBase];
     runners[fromBase] = null;
 }
@@ -1471,7 +1475,20 @@ function handleRunnerAction(action) {
 
     if (slot) {
         if (action === 'toggle') {
-            gs.runners[slot] = gs.runners[slot] ? null : batter;
+            if (gs.runners[slot]) {
+                gs.runners[slot] = null;
+            } else {
+                if (!batter) {
+                    showToast('打者情報が見つかりません');
+                    return;
+                }
+                const alreadyOnBase = ['base1', 'base2', 'base3'].some(base => gs.runners[base]?.id === batter.id);
+                if (alreadyOnBase) {
+                    showToast('同じ選手が既に塁上にいます');
+                    return;
+                }
+                gs.runners[slot] = batter;
+            }
         } else if (action === 'advance') {
             if (slot === 'base1') moveRunnerBetweenBases('base1', 'base2');
             if (slot === 'base2') moveRunnerBetweenBases('base2', 'base3');
@@ -1536,10 +1553,19 @@ function changeHalfInning(mode) {
     if (!currentMatch) return;
     const gs = currentMatch.gameState;
     if (mode === 'bottom') {
-        gs.order = 1;
+        if (gs.order === 0) {
+            gs.order = 1;
+        } else {
+            gs.order = 0;
+            gs.inning += 1;
+        }
     } else if (mode === 'nextTop') {
-        gs.order = 0;
-        gs.inning += 1;
+        if (gs.order === 1) {
+            gs.order = 0;
+            gs.inning += 1;
+        } else {
+            gs.order = 1;
+        }
     }
     gs.outs = 0;
     gs.balls = 0;
