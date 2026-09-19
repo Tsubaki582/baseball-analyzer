@@ -7,6 +7,9 @@ let currentPerspective = 'catcher';
 let selectedCourseData = null;
 let selectedHitData = null;
 let selectedDirectionData = null;
+let selectedRunnerBase = null;
+let transitionTimer = null;
+let atBatStartRunners = null;
 
 const STARTER_POSITIONS = ['P', 'C', '1B', '2B', '3B', 'SS', 'LF', 'CF', 'RF', 'DH'];
 const DUPLICATE_LOCKED_POSITIONS = STARTER_POSITIONS.filter(position => position !== 'DH');
@@ -33,6 +36,49 @@ function addSafeEventListener(id, eventName, handler) {
         element.addEventListener(eventName, handler);
     }
     return element;
+}
+
+function ensureGameProgressState(gameState) {
+    if (!gameState.batterIndices) {
+        gameState.batterIndices = { top: gameState.currentBatterIndex || 0, bottom: 0 };
+    }
+    if (!gameState.currentBatterIndex && gameState.currentBatterIndex !== 0) {
+        gameState.currentBatterIndex = gameState.order === 0 ? gameState.batterIndices.top : gameState.batterIndices.bottom;
+    }
+}
+
+function getCurrentBatterIndex(gs) {
+    ensureGameProgressState(gs);
+    return gs.order === 0 ? gs.batterIndices.top : gs.batterIndices.bottom;
+}
+
+function setCurrentBatterIndex(gs, index) {
+    ensureGameProgressState(gs);
+    if (gs.order === 0) {
+        gs.batterIndices.top = index;
+    } else {
+        gs.batterIndices.bottom = index;
+    }
+    gs.currentBatterIndex = index;
+}
+
+function getBattingTeam() {
+    if (!currentMatch) return null;
+    return currentMatch.gameState.order === 0 ? currentMatch.ownTeam : currentMatch.opponentTeam;
+}
+
+function getDefendingTeam() {
+    if (!currentMatch) return null;
+    return currentMatch.gameState.order === 0 ? currentMatch.opponentTeam : currentMatch.ownTeam;
+}
+
+function addRunsToBattingTeam(runs) {
+    if (!currentMatch || runs <= 0) return;
+    if (currentMatch.gameState.order === 0) {
+        currentMatch.gameState.ownScore += runs;
+    } else {
+        currentMatch.gameState.opponentScore += runs;
+    }
 }
 
 /**
@@ -174,6 +220,14 @@ function setupEventListeners() {
             const inPlaySection = document.getElementById('inPlaySection');
             if (inPlaySection) {
                 inPlaySection.style.display = result === 'inPlay' ? 'block' : 'none';
+                if (result !== 'inPlay') {
+                    document.querySelectorAll('.hit-type-btn').forEach(b => b.classList.remove('selected'));
+                    document.querySelectorAll('[data-direction]').forEach(node => node.classList.remove('selected'));
+                    document.getElementById('selectedDirection').textContent = '未選択';
+                    document.getElementById('atBatResult').value = '';
+                    selectedHitData = null;
+                    selectedDirectionData = null;
+                }
             }
         });
     });
@@ -184,6 +238,23 @@ function setupEventListeners() {
             this.classList.add('selected');
             selectedHitData = this.getAttribute('data-hit');
         });
+    });
+
+    document.querySelectorAll('.runner-base').forEach(btn => {
+        btn.addEventListener('click', () => openRunnerActions(btn.getAttribute('data-base')));
+    });
+    document.querySelectorAll('.runner-action-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            handleRunnerAction(btn.getAttribute('data-action'));
+        });
+    });
+    addSafeEventListener('runnerActions', 'click', (e) => {
+        e.stopPropagation();
+    });
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.runner-base') && !e.target.closest('#runnerActions')) {
+            closeRunnerActions();
+        }
     });
 
     addSafeEventListener('recordPitch', 'click', () => {
@@ -206,6 +277,21 @@ function setupEventListeners() {
     addSafeEventListener('confirmRunnersModal', 'click', () => {
         updateRunnersFromModal();
         hideModal('runnersModal');
+    });
+
+    addSafeEventListener('skipToNextBatter', 'click', () => moveBatterBy(1, true));
+    addSafeEventListener('backToPreviousBatter', 'click', () => moveBatterBy(-1, false));
+    addSafeEventListener('goToNextHalfInning', 'click', () => moveHalfInning(1));
+    addSafeEventListener('goToPreviousHalfInning', 'click', () => moveHalfInning(-1));
+    addSafeEventListener('switchToBottom', 'click', () => changeHalfInning('bottom'));
+    addSafeEventListener('switchToNextTop', 'click', () => changeHalfInning('nextTop'));
+    addSafeEventListener('moveToManualInning', 'click', () => {
+        const inningValue = parseInt(document.getElementById('manualInningInput').value, 10);
+        if (!Number.isInteger(inningValue) || inningValue < 1) {
+            showToast('1以上のイニングを入力してください');
+            return;
+        }
+        moveToInning(inningValue);
     });
 
     addSafeEventListener('navHistory', 'click', () => {
@@ -330,6 +416,9 @@ function startGame() {
     currentMatch.gameState.isActive = true;
     currentMatch.gameState.inning = 1;
     currentMatch.gameState.order = currentMatch.matchInfo.order === 'home' ? 0 : 1;
+    currentMatch.gameState.batterIndices = { top: 0, bottom: 0 };
+    currentMatch.gameState.currentBatterIndex = 0;
+    atBatStartRunners = null;
     
     // 保存
     saveCurrentMatch(currentMatch);
@@ -339,6 +428,7 @@ function startGame() {
     updateGameDisplay();
     drawStrikeZone('strikeZone', 'catcher');
     drawFieldDiagram('fieldDiagram');
+    closeRunnerActions();
     
     showToast('試合を開始しました');
 }
@@ -381,15 +471,16 @@ function updatePlayerDisplay() {
     if (!currentMatch) return;
     
     const gs = currentMatch.gameState;
-    const team = gs.order === 0 ? currentMatch.ownTeam : currentMatch.opponentTeam;
-    const oppositeTeam = gs.order === 0 ? currentMatch.opponentTeam : currentMatch.ownTeam;
+    const team = getBattingTeam();
+    const oppositeTeam = getDefendingTeam();
+    const batterIndex = getCurrentBatterIndex(gs);
     
     // 現在の打者
-    if (team.lineup[gs.currentBatterIndex]) {
-        const batter = team.lineup[gs.currentBatterIndex];
+    if (team?.lineup[batterIndex]) {
+        const batter = team.lineup[batterIndex];
         document.getElementById('batterNumber').textContent = batter.number;
         document.getElementById('batterName').textContent = batter.name;
-        document.getElementById('batterMeta').textContent = `${gs.currentBatterIndex + 1}番`;
+        document.getElementById('batterMeta').textContent = `${batterIndex + 1}番`;
     }
     
     // 現在の投手
@@ -412,6 +503,10 @@ function updateRunnersDisplay() {
     document.getElementById('runner1').textContent = runners.base1 ? runners.base1.name : '-';
     document.getElementById('runner2').textContent = runners.base2 ? runners.base2.name : '-';
     document.getElementById('runner3').textContent = runners.base3 ? runners.base3.name : '-';
+    document.querySelector('[data-base="base1"]')?.classList.toggle('occupied', Boolean(runners.base1));
+    document.querySelector('[data-base="base2"]')?.classList.toggle('occupied', Boolean(runners.base2));
+    document.querySelector('[data-base="base3"]')?.classList.toggle('occupied', Boolean(runners.base3));
+    document.querySelector('[data-base="home"]')?.classList.remove('occupied');
 }
 
 /**
@@ -1040,15 +1135,16 @@ function recordPitchData() {
     const speed = document.getElementById('pitchSpeed').value;
     
     const pitchData = initializePitchData();
-    const battingTeam = currentMatch.gameState.order === 0 ? currentMatch.ownTeam : currentMatch.opponentTeam;
-    const defendingTeam = currentMatch.gameState.order === 0 ? currentMatch.opponentTeam : currentMatch.ownTeam;
+    const battingTeam = getBattingTeam();
+    const defendingTeam = getDefendingTeam();
+    const batterIndex = getCurrentBatterIndex(currentMatch.gameState);
     pitchData.inning = currentMatch.gameState.inning;
     pitchData.order = currentMatch.gameState.order;
     pitchData.pitchType = pitchType;
     pitchData.speed = speed ? parseFloat(speed) : null;
     pitchData.result = result;
     pitchData.perspective = currentPerspective;
-    pitchData.batter = battingTeam.lineup[currentMatch.gameState.currentBatterIndex] || null;
+    pitchData.batter = battingTeam.lineup[batterIndex] || null;
     pitchData.pitcher = defendingTeam.pitcher || defendingTeam.lineup[currentMatch.gameState.currentPitcherIndex] || null;
     
     // コース情報
@@ -1063,14 +1159,8 @@ function recordPitchData() {
     // インプレーの場合は打球情報も記録
     if (result === 'inPlay') {
         const hitTypeBtn = document.querySelector('.hit-type-btn.selected');
-        const directionElements = document.querySelectorAll('[data-direction]');
-        let selectedDirection = null;
-        
-        directionElements.forEach(el => {
-            if (el.getAttribute('fill') === '#0066cc') {
-                selectedDirection = el.getAttribute('data-direction');
-            }
-        });
+        const selectedDirectionElement = document.querySelector('[data-direction].selected');
+        const selectedDirection = selectedDirectionElement ? selectedDirectionElement.getAttribute('data-direction') : null;
         
         if (!hitTypeBtn || !selectedDirection) {
             showToast('打球種類と方向を選択してください');
@@ -1079,6 +1169,8 @@ function recordPitchData() {
         
         pitchData.hitType = hitTypeBtn.getAttribute('data-hit');
         pitchData.direction = selectedDirection;
+        selectedHitData = pitchData.hitType;
+        selectedDirectionData = selectedDirection;
         pitchData.inPlay = true;
         
         // 打席結果も記録
@@ -1092,39 +1184,45 @@ function recordPitchData() {
     
     // ゲーム状態を更新
     const gs = currentMatch.gameState;
+    if (atBatStartRunners === null && gs.balls === 0 && gs.strikes === 0) {
+        atBatStartRunners = deepCopy(gs.runners);
+    }
     
-    if (result === 'look' || (result === 'swing' && true) || result === 'foul') {
-        // ストライク
+    if (result === 'look' || result === 'swing') {
         gs.strikes++;
-        if (result !== 'foul') {
-            gs.strikes = Math.min(gs.strikes, 2);
-        }
-    } else if (result === 'ball' || result === 'hitByPitch') {
-        // ボール or 死球
+    } else if (result === 'foul') {
+        if (gs.strikes < 2) gs.strikes++;
+    } else if (result === 'ball') {
         gs.balls++;
-        gs.balls = Math.min(gs.balls, 3);
     }
     
     // ストライク/ボール数を更新
     pitchData.balls = gs.balls;
     pitchData.strikes = gs.strikes;
+    pitchData.runnersBefore = deepCopy(gs.runners);
+    pitchData.runners = deepCopy(gs.runners);
     
     // 投球を記録
     recordPitch(currentMatch, pitchData);
     
     // アウト判定
+    let atBatFinished = false;
     if (result === 'inPlay') {
+        atBatFinished = true;
         processAtBatResult(pitchData.atBatResult);
+    } else if (result === 'hitByPitch') {
+        atBatFinished = true;
+        processAtBatResult('hitByPitch');
     } else if (gs.strikes >= 3) {
-        // 三振
-        gs.strikes = 0;
-        gs.balls = 0;
+        atBatFinished = true;
         processAtBatResult('strikeout');
     } else if (gs.balls >= 4) {
-        // 四球
-        gs.strikes = 0;
-        gs.balls = 0;
+        atBatFinished = true;
         processAtBatResult('walk');
+    }
+
+    if (atBatFinished) {
+        pitchData.runners = deepCopy(gs.runners);
     }
     
     updateGameDisplay();
@@ -1132,6 +1230,9 @@ function recordPitchData() {
     
     // 入力フォームをクリア
     clearPitchForm();
+    if (atBatFinished) {
+        closeRunnerActions();
+    }
 }
 
 /**
@@ -1141,30 +1242,56 @@ function processAtBatResult(result) {
     if (!currentMatch) return;
     
     const gs = currentMatch.gameState;
+    const runnersAtBatStart = atBatStartRunners ? deepCopy(atBatStartRunners) : deepCopy(gs.runners);
+    const battingTeam = getBattingTeam();
+    const batterIndex = getCurrentBatterIndex(gs);
+    const batter = battingTeam?.lineup[batterIndex] || null;
     
     // アウトになる結果
-    const outResults = ['strikeout', 'groundOut', 'flyOut', 'lineOut', 'buntOut', 'sacrifice'];
+    const outResults = ['strikeout', 'groundOut', 'flyOut', 'lineOut', 'buntOut', 'sacrifice', 'sacFly'];
+    const scoringMap = { single: 1, double: 2, triple: 3 };
+    let runsScored = 0;
+    let willEndInning = false;
     
     if (outResults.includes(result)) {
         gs.outs++;
-        
-        if (gs.outs >= 3) {
-            // 3アウト: イニングが終了
-            endInning();
-        } else {
-            // 次の打者へ
-            advanceBatter();
-        }
+        willEndInning = gs.outs >= 3;
     } else {
-        // アウトでない: 打数を進める
         if (result === 'homerun') {
-            gs.ownScore++;  // 本塁打はスコア
+            runsScored += advanceRunnersForHomerun();
+        } else if (scoringMap[result]) {
+            runsScored += advanceRunnersByBases(scoringMap[result], batter);
+        } else if (result === 'walk' || result === 'hitByPitch') {
+            runsScored += advanceRunnersForWalk(batter);
+        } else if (result === 'error' || result === 'fielderChoice' || result === 'other') {
+            runsScored += advanceRunnersByBases(1, batter);
         }
-        advanceBatter();
+    }
+
+    addRunsToBattingTeam(runsScored);
+    recordAtBat(currentMatch, {
+        id: generateId(),
+        timestamp: new Date().toISOString(),
+        inning: gs.inning,
+        order: gs.order,
+        batter,
+        pitcher: (getDefendingTeam()?.pitcher || null),
+        result,
+        hitType: selectedHitData,
+        direction: selectedDirectionData,
+        runners: runnersAtBatStart,
+        runsScored
+    });
+
+    if (willEndInning) {
+        endInning();
+    } else {
+        advanceBatter(true);
     }
     
     gs.strikes = 0;
     gs.balls = 0;
+    atBatStartRunners = null;
 }
 
 /**
@@ -1174,18 +1301,23 @@ function endInning() {
     if (!currentMatch) return;
     
     const gs = currentMatch.gameState;
+    const nextOrder = gs.order === 0 ? 1 : 0;
+    const nextInning = gs.order === 1 ? gs.inning + 1 : gs.inning;
     
-    // 裏→表に移行
-    if (gs.order === 1) {
-        gs.inning++;
-        gs.order = 0;
-    } else {
-        gs.order = 1;
-    }
+    gs.inning = nextInning;
+    gs.order = nextOrder;
     
     gs.outs = 0;
     gs.balls = 0;
     gs.strikes = 0;
+    gs.runners = { base1: null, base2: null, base3: null };
+    atBatStartRunners = null;
+    setCurrentBatterIndex(gs, getCurrentBatterIndex(gs));
+    const defendingPitcher = getDefendingTeam()?.pitcher?.name || '-';
+    const battingTeam = getBattingTeam();
+    const nextBatterIndex = getCurrentBatterIndex(gs);
+    const nextBatter = battingTeam?.lineup?.[nextBatterIndex];
+    showTransitionOverlay(`${gs.inning}回${getOrderName(gs.order)}\n投手：${defendingPitcher}\n打者：${nextBatterIndex + 1}番 ${nextBatter?.name || '-'}`);
     
     // 9回を超えたら試合終了フラグ
     if (gs.inning > 9) {
@@ -1198,15 +1330,22 @@ function endInning() {
 /**
  * 次の打者に移行
  */
-function advanceBatter() {
+function advanceBatter(showAnnouncement = false) {
     if (!currentMatch) return;
     
     const gs = currentMatch.gameState;
-    const team = gs.order === 0 ? currentMatch.ownTeam : currentMatch.opponentTeam;
-    
-    gs.currentBatterIndex++;
-    if (gs.currentBatterIndex >= team.lineup.length) {
-        gs.currentBatterIndex = 0;
+    const team = getBattingTeam();
+    const currentIndex = getCurrentBatterIndex(gs);
+    let nextIndex = currentIndex + 1;
+    if (nextIndex >= team.lineup.length) {
+        nextIndex = 0;
+    }
+    setCurrentBatterIndex(gs, nextIndex);
+    atBatStartRunners = null;
+
+    if (showAnnouncement) {
+        const nextBatter = team.lineup[nextIndex];
+        showTransitionOverlay(`次の打者\n${nextIndex + 1}番 ${nextBatter?.name || '-'}`);
     }
     
     saveCurrentMatch(currentMatch);
@@ -1218,12 +1357,275 @@ function advanceBatter() {
 function clearPitchForm() {
     document.querySelectorAll('.pitch-btn').forEach(btn => btn.classList.remove('selected'));
     document.querySelectorAll('.result-btn').forEach(btn => btn.classList.remove('selected'));
+    document.querySelectorAll('.hit-type-btn').forEach(btn => btn.classList.remove('selected'));
+    document.querySelectorAll('[data-direction]').forEach(node => node.classList.remove('selected'));
     document.getElementById('pitchSpeed').value = '';
     document.getElementById('selectedCourse').textContent = '未選択';
     document.getElementById('selectedDirection').textContent = '未選択';
+    document.getElementById('atBatResult').value = '';
+    document.getElementById('inPlaySection').style.display = 'none';
+    selectedHitData = null;
+    selectedDirectionData = null;
     
     // ストライクゾーンをリドロー
     drawStrikeZone('strikeZone', currentPerspective);
+    drawFieldDiagram('fieldDiagram');
+}
+
+function showTransitionOverlay(message, duration = 1400) {
+    const overlay = document.getElementById('transitionOverlay');
+    const messageNode = document.getElementById('transitionMessage');
+    if (!overlay || !messageNode) return;
+    if (transitionTimer) {
+        clearTimeout(transitionTimer);
+    }
+    messageNode.textContent = message;
+    overlay.setAttribute('aria-hidden', 'false');
+    overlay.classList.add('active');
+    transitionTimer = setTimeout(() => {
+        overlay.classList.remove('active');
+        overlay.setAttribute('aria-hidden', 'true');
+    }, duration);
+}
+
+function advanceRunnersByBases(baseCount, batter) {
+    if (!currentMatch) return 0;
+    const gs = currentMatch.gameState;
+    const nextRunners = { base1: null, base2: null, base3: null };
+    let runs = 0;
+    const current = gs.runners;
+    const moveRunner = (runner, startBase) => {
+        if (!runner) return;
+        const destination = startBase + baseCount;
+        if (destination >= 4) {
+            runs++;
+            return;
+        }
+        nextRunners[`base${destination}`] = runner;
+    };
+
+    moveRunner(current.base3, 3);
+    moveRunner(current.base2, 2);
+    moveRunner(current.base1, 1);
+
+    if (baseCount >= 4) {
+        runs++;
+    } else {
+        nextRunners[`base${baseCount}`] = batter;
+    }
+
+    gs.runners = nextRunners;
+    return runs;
+}
+
+function advanceRunnersForHomerun() {
+    if (!currentMatch) return 0;
+    const gs = currentMatch.gameState;
+    let runs = 1;
+    if (gs.runners.base1) runs++;
+    if (gs.runners.base2) runs++;
+    if (gs.runners.base3) runs++;
+    gs.runners = { base1: null, base2: null, base3: null };
+    return runs;
+}
+
+function advanceRunnersForWalk(batter) {
+    if (!currentMatch) return 0;
+    const gs = currentMatch.gameState;
+    const current = gs.runners;
+    const nextRunners = { ...current };
+    let runs = 0;
+
+    const forceAtFirst = Boolean(current.base1);
+    const forceAtSecond = Boolean(current.base1 && current.base2);
+    const forceAtThird = Boolean(current.base1 && current.base2 && current.base3);
+
+    if (forceAtThird) {
+        runs++;
+        nextRunners.base3 = current.base2;
+        nextRunners.base2 = current.base1;
+        nextRunners.base1 = batter;
+    } else if (forceAtSecond) {
+        nextRunners.base3 = current.base2;
+        nextRunners.base2 = current.base1;
+        nextRunners.base1 = batter;
+    } else if (forceAtFirst) {
+        nextRunners.base2 = current.base1;
+        nextRunners.base1 = batter;
+    } else {
+        nextRunners.base1 = batter;
+    }
+
+    gs.runners = nextRunners;
+    return runs;
+}
+
+function openRunnerActions(base) {
+    selectedRunnerBase = base;
+    const panel = document.getElementById('runnerActions');
+    const title = document.getElementById('runnerActionsTitle');
+    if (!panel || !title) return;
+    const labelMap = { base1: '一塁', base2: '二塁', base3: '三塁', home: '本塁' };
+    title.textContent = `${labelMap[base] || '塁'} の操作`;
+    panel.style.display = 'block';
+}
+
+function closeRunnerActions() {
+    const panel = document.getElementById('runnerActions');
+    if (panel) panel.style.display = 'none';
+    selectedRunnerBase = null;
+}
+
+function getRunnerSlot(base) {
+    if (base === 'base1' || base === 'base2' || base === 'base3') return base;
+    return null;
+}
+
+function moveRunnerBetweenBases(fromBase, toBase) {
+    if (!currentMatch || !fromBase || !toBase) return;
+    const runners = currentMatch.gameState.runners;
+    if (!runners[fromBase] || runners[toBase]) {
+        return;
+    }
+    runners[toBase] = runners[fromBase];
+    runners[fromBase] = null;
+}
+
+function handleRunnerAction(action) {
+    if (!currentMatch || !selectedRunnerBase) return;
+    const gs = currentMatch.gameState;
+    const slot = getRunnerSlot(selectedRunnerBase);
+    const battingTeam = getBattingTeam();
+    const batter = battingTeam?.lineup?.[getCurrentBatterIndex(gs)] || null;
+
+    if (slot) {
+        if (action === 'toggle') {
+            if (gs.runners[slot]) {
+                gs.runners[slot] = null;
+            } else {
+                if (!batter) {
+                    showToast('打者情報が見つかりません');
+                    return;
+                }
+                const alreadyOnBase = ['base1', 'base2', 'base3'].some(base => gs.runners[base]?.id === batter.id);
+                if (alreadyOnBase) {
+                    showToast('同じ選手が既に塁上にいます');
+                    return;
+                }
+                gs.runners[slot] = batter;
+            }
+        } else if (action === 'advance') {
+            if (slot === 'base1') moveRunnerBetweenBases('base1', 'base2');
+            if (slot === 'base2') moveRunnerBetweenBases('base2', 'base3');
+            if (slot === 'base3' && gs.runners.base3) {
+                gs.runners.base3 = null;
+                addRunsToBattingTeam(1);
+            }
+        } else if (action === 'retreat') {
+            if (slot === 'base2') moveRunnerBetweenBases('base2', 'base1');
+            if (slot === 'base3') moveRunnerBetweenBases('base3', 'base2');
+        } else if (action === 'score' && gs.runners[slot]) {
+            gs.runners[slot] = null;
+            addRunsToBattingTeam(1);
+        }
+    } else if (selectedRunnerBase === 'home' && action === 'score') {
+        if (gs.runners.base3) {
+            gs.runners.base3 = null;
+            addRunsToBattingTeam(1);
+        } else {
+            showToast('三塁走者がいないため得点にできません');
+            return;
+        }
+    }
+
+    saveCurrentMatch(currentMatch);
+    updateGameDisplay();
+    closeRunnerActions();
+}
+
+function moveBatterBy(step, showAnnouncement) {
+    if (!currentMatch) return;
+    const gs = currentMatch.gameState;
+    const team = getBattingTeam();
+    const lineupLength = team?.lineup?.length || 9;
+    const currentIndex = getCurrentBatterIndex(gs);
+    const nextIndex = (currentIndex + step + lineupLength) % lineupLength;
+    setCurrentBatterIndex(gs, nextIndex);
+    atBatStartRunners = null;
+    gs.balls = 0;
+    gs.strikes = 0;
+    saveCurrentMatch(currentMatch);
+    updateGameDisplay();
+    clearPitchForm();
+    if (showAnnouncement) {
+        const nextBatter = team?.lineup?.[nextIndex];
+        showTransitionOverlay(`次の打者\n${nextIndex + 1}番 ${nextBatter?.name || '-'}`);
+    }
+}
+
+function moveHalfInning(step) {
+    if (!currentMatch) return;
+    const gs = currentMatch.gameState;
+    let totalHalf = ((gs.inning - 1) * 2) + gs.order + step;
+    if (totalHalf < 0) totalHalf = 0;
+    gs.inning = Math.floor(totalHalf / 2) + 1;
+    gs.order = totalHalf % 2;
+    gs.outs = 0;
+    gs.balls = 0;
+    gs.strikes = 0;
+    gs.runners = { base1: null, base2: null, base3: null };
+    atBatStartRunners = null;
+    setCurrentBatterIndex(gs, getCurrentBatterIndex(gs));
+    saveCurrentMatch(currentMatch);
+    updateGameDisplay();
+    clearPitchForm();
+    showTransitionOverlay(`${gs.inning}回${getOrderName(gs.order)} に移動`);
+}
+
+function changeHalfInning(mode) {
+    if (!currentMatch) return;
+    const gs = currentMatch.gameState;
+    if (mode === 'bottom') {
+        if (gs.order === 0) {
+            gs.order = 1;
+        } else {
+            gs.order = 0;
+            gs.inning += 1;
+        }
+    } else if (mode === 'nextTop') {
+        if (gs.order === 1) {
+            gs.order = 0;
+            gs.inning += 1;
+        } else {
+            gs.order = 1;
+        }
+    }
+    gs.outs = 0;
+    gs.balls = 0;
+    gs.strikes = 0;
+    gs.runners = { base1: null, base2: null, base3: null };
+    atBatStartRunners = null;
+    setCurrentBatterIndex(gs, getCurrentBatterIndex(gs));
+    saveCurrentMatch(currentMatch);
+    updateGameDisplay();
+    clearPitchForm();
+    showTransitionOverlay(`${gs.inning}回${getOrderName(gs.order)} に変更`);
+}
+
+function moveToInning(inning) {
+    if (!currentMatch) return;
+    const gs = currentMatch.gameState;
+    gs.inning = inning;
+    gs.outs = 0;
+    gs.balls = 0;
+    gs.strikes = 0;
+    gs.runners = { base1: null, base2: null, base3: null };
+    atBatStartRunners = null;
+    setCurrentBatterIndex(gs, getCurrentBatterIndex(gs));
+    saveCurrentMatch(currentMatch);
+    updateGameDisplay();
+    clearPitchForm();
+    showTransitionOverlay(`${inning}回${getOrderName(gs.order)} に移動`);
 }
 
 /**
@@ -1288,7 +1690,7 @@ function displayCurrentAtBat() {
     
     const gs = currentMatch.gameState;
     const team = gs.order === 0 ? currentMatch.ownTeam : currentMatch.opponentTeam;
-    const batter = team.lineup[gs.currentBatterIndex];
+    const batter = team.lineup[getCurrentBatterIndex(gs)];
     
     document.getElementById('currentABTitle').textContent = 
         `${getInningDisplay(gs.inning, gs.order)} ${batter.number}番 ${batter.name}`;
@@ -1481,12 +1883,17 @@ function drawFieldChart(matchData, batterId) {
     
     // 打球をプロット
     const directions = {
-        'left': {x: 50, y: 200},
-        'leftCenter': {x: 100, y: 120},
-        'center': {x: 150, y: 50},
-        'rightCenter': {x: 200, y: 120},
-        'right': {x: 250, y: 200},
-        'infield': {x: 150, y: 250}
+        'pitcher': {x: 150, y: 200},
+        'catcher': {x: 150, y: 248},
+        'first': {x: 225, y: 190},
+        'second': {x: 186, y: 150},
+        'third': {x: 76, y: 190},
+        'shortstop': {x: 116, y: 150},
+        'left': {x: 50, y: 115},
+        'center': {x: 150, y: 70},
+        'right': {x: 250, y: 115},
+        'leftCenter': {x: 95, y: 95},
+        'rightCenter': {x: 205, y: 95}
     };
     
     const hitCounts = {};

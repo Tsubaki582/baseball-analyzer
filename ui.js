@@ -93,49 +93,61 @@ function drawStrikeZone(containerId, perspective = 'catcher') {
     container.innerHTML = '';
     
     const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    svg.setAttribute('viewBox', '0 0 300 300');
+    const gridSize = 5;
+    const cellSize = 60;
+    const viewSize = gridSize * cellSize;
+    svg.setAttribute('viewBox', `0 0 ${viewSize} ${viewSize}`);
     svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
     
     // グリッドラインを描画
-    const colors = ['#0066cc', '#e0e0e0'];
-    for (let i = 0; i <= 3; i++) {
-        const pos = i * 100;
+    for (let i = 0; i <= gridSize; i++) {
+        const pos = i * cellSize;
         
         // 縦線
         const vline = document.createElementNS('http://www.w3.org/2000/svg', 'line');
         vline.setAttribute('x1', pos);
         vline.setAttribute('y1', '0');
         vline.setAttribute('x2', pos);
-        vline.setAttribute('y2', '300');
-        vline.setAttribute('stroke', i === 0 || i === 3 ? '#0066cc' : '#e0e0e0');
-        vline.setAttribute('stroke-width', i === 0 || i === 3 ? '2' : '1');
+        vline.setAttribute('y2', viewSize);
+        vline.setAttribute('stroke', '#e0e0e0');
+        vline.setAttribute('stroke-width', '1');
         svg.appendChild(vline);
         
         // 横線
         const hline = document.createElementNS('http://www.w3.org/2000/svg', 'line');
         hline.setAttribute('x1', '0');
         hline.setAttribute('y1', pos);
-        hline.setAttribute('x2', '300');
+        hline.setAttribute('x2', viewSize);
         hline.setAttribute('y2', pos);
-        hline.setAttribute('stroke', i === 0 || i === 3 ? '#0066cc' : '#e0e0e0');
-        hline.setAttribute('stroke-width', i === 0 || i === 3 ? '2' : '1');
+        hline.setAttribute('stroke', '#e0e0e0');
+        hline.setAttribute('stroke-width', '1');
         svg.appendChild(hline);
     }
+
+    const strikeZoneFrame = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    strikeZoneFrame.setAttribute('x', cellSize);
+    strikeZoneFrame.setAttribute('y', cellSize);
+    strikeZoneFrame.setAttribute('width', cellSize * 3);
+    strikeZoneFrame.setAttribute('height', cellSize * 3);
+    strikeZoneFrame.setAttribute('fill', 'none');
+    strikeZoneFrame.setAttribute('stroke', '#0066cc');
+    strikeZoneFrame.setAttribute('stroke-width', '3');
+    svg.appendChild(strikeZoneFrame);
     
     // クリッカブルなセル
-    for (let row = 0; row < 3; row++) {
-        for (let col = 0; col < 3; col++) {
+    for (let row = 0; row < gridSize; row++) {
+        for (let col = 0; col < gridSize; col++) {
+            const isStrikeZone = row >= 1 && row <= 3 && col >= 1 && col <= 3;
             const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-            const x = col * 100;
-            const y = row * 100;
+            const x = col * cellSize;
+            const y = row * cellSize;
             
             rect.setAttribute('x', x);
             rect.setAttribute('y', y);
-            rect.setAttribute('width', '100');
-            rect.setAttribute('height', '100');
-            rect.setAttribute('fill', 'transparent');
+            rect.setAttribute('width', cellSize);
+            rect.setAttribute('height', cellSize);
             rect.setAttribute('stroke', 'none');
-            rect.setAttribute('class', 'zone-cell');
+            rect.setAttribute('class', `zone-cell ${isStrikeZone ? 'strike-zone-cell' : 'ball-zone'}`);
             rect.setAttribute('data-row', row);
             rect.setAttribute('data-col', col);
             rect.setAttribute('data-perspective', perspective);
@@ -149,13 +161,13 @@ function drawStrikeZone(containerId, perspective = 'catcher') {
             
             // ラベル
             const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-            text.setAttribute('x', x + 50);
-            text.setAttribute('y', y + 90);
+            text.setAttribute('x', x + (cellSize / 2));
+            text.setAttribute('y', y + cellSize - 6);
             text.setAttribute('text-anchor', 'middle');
-            text.setAttribute('font-size', '10');
+            text.setAttribute('font-size', '8');
             text.setAttribute('fill', '#999');
             text.setAttribute('pointer-events', 'none');
-            text.textContent = getCourseName(row, col);
+            text.textContent = `${row + 1}-${col + 1}`;
             svg.appendChild(text);
         }
     }
@@ -176,7 +188,10 @@ function selectCourse(row, col, perspective) {
     const selected = document.querySelector(`[data-row="${row}"][data-col="${col}"][data-perspective="${perspective}"]`);
     if (selected) {
         selected.classList.add('selected');
-        document.getElementById('selectedCourse').textContent = getCourseName(row, col);
+        document.getElementById('selectedCourse').textContent = getCourseName(row, col, 'modern');
+        if (typeof selectedCourseData !== 'undefined') {
+            selectedCourseData = { row, col, perspective };
+        }
     }
 }
 
@@ -190,7 +205,7 @@ function drawFieldDiagram(containerId) {
     container.innerHTML = '';
     
     const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    svg.setAttribute('viewBox', '0 0 300 300');
+    svg.setAttribute('viewBox', '0 0 300 320');
     svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
     
     // グラウンドの背景
@@ -250,23 +265,26 @@ function drawFieldDiagram(containerId) {
     
     // クリッカブルな打球方向ボタン
     const directions = [
-        {x: 50, y: 200, name: '左方向', value: 'left'},
-        {x: 100, y: 120, name: '左中間', value: 'leftCenter'},
-        {x: 150, y: 50, name: '中方向', value: 'center'},
-        {x: 200, y: 120, name: '右中間', value: 'rightCenter'},
-        {x: 250, y: 200, name: '右方向', value: 'right'},
-        {x: 150, y: 250, name: '内野', value: 'infield'}
+        {x: 150, y: 200, name: '投手', value: 'pitcher'},
+        {x: 150, y: 248, name: '捕手', value: 'catcher'},
+        {x: 225, y: 190, name: '一塁', value: 'first'},
+        {x: 186, y: 150, name: '二塁', value: 'second'},
+        {x: 76, y: 190, name: '三塁', value: 'third'},
+        {x: 116, y: 150, name: '遊撃', value: 'shortstop'},
+        {x: 50, y: 115, name: '左翼', value: 'left'},
+        {x: 150, y: 70, name: '中堅', value: 'center'},
+        {x: 250, y: 115, name: '右翼', value: 'right'},
+        {x: 95, y: 95, name: '左中間', value: 'leftCenter'},
+        {x: 205, y: 95, name: '右中間', value: 'rightCenter'}
     ];
     
     directions.forEach(dir => {
         const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
         circle.setAttribute('cx', dir.x);
         circle.setAttribute('cy', dir.y);
-        circle.setAttribute('r', '12');
-        circle.setAttribute('fill', '#e6f2ff');
-        circle.setAttribute('stroke', '#0066cc');
-        circle.setAttribute('stroke-width', '2');
+        circle.setAttribute('r', '13');
         circle.setAttribute('data-direction', dir.value);
+        circle.setAttribute('class', 'field-node');
         circle.style.cursor = 'pointer';
         
         circle.addEventListener('click', () => {
@@ -295,14 +313,17 @@ function drawFieldDiagram(containerId) {
 function selectDirection(direction, directionName) {
     // 前の選択を削除
     document.querySelectorAll('[data-direction]').forEach(el => {
-        el.setAttribute('fill', '#e6f2ff');
+        el.classList.remove('selected');
     });
     
     // 新しい選択を追加
     const selected = document.querySelector(`[data-direction="${direction}"]`);
     if (selected) {
-        selected.setAttribute('fill', '#0066cc');
+        selected.classList.add('selected');
         document.getElementById('selectedDirection').textContent = directionName;
+        if (typeof selectedDirectionData !== 'undefined') {
+            selectedDirectionData = direction;
+        }
     }
 }
 
@@ -540,12 +561,18 @@ function plotPitchesOnStrikeZone(containerId, pitches) {
     container.innerHTML = '';
     
     const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    const maxCourse = pitches.reduce((max, pitch) => {
+        if (!pitch.course) return max;
+        return Math.max(max, pitch.course.row, pitch.course.col);
+    }, 2);
+    const gridSize = maxCourse <= 2 ? 3 : 5;
+    const cellSize = 300 / gridSize;
     svg.setAttribute('viewBox', '0 0 300 300');
     svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
     
     // グリッド描画
-    for (let i = 0; i <= 3; i++) {
-        const pos = i * 100;
+    for (let i = 0; i <= gridSize; i++) {
+        const pos = i * cellSize;
         
         const vline = document.createElementNS('http://www.w3.org/2000/svg', 'line');
         vline.setAttribute('x1', pos);
@@ -568,10 +595,12 @@ function plotPitchesOnStrikeZone(containerId, pitches) {
     
     // ストライクゾーンの枠線
     const frame = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-    frame.setAttribute('x', '0');
-    frame.setAttribute('y', '0');
-    frame.setAttribute('width', '300');
-    frame.setAttribute('height', '300');
+    const strikeStart = gridSize === 5 ? cellSize : 0;
+    const strikeSize = gridSize === 5 ? cellSize * 3 : 300;
+    frame.setAttribute('x', strikeStart);
+    frame.setAttribute('y', strikeStart);
+    frame.setAttribute('width', strikeSize);
+    frame.setAttribute('height', strikeSize);
     frame.setAttribute('fill', 'none');
     frame.setAttribute('stroke', '#0066cc');
     frame.setAttribute('stroke-width', '2');
@@ -581,8 +610,8 @@ function plotPitchesOnStrikeZone(containerId, pitches) {
     pitches.forEach((pitch, index) => {
         if (!pitch.course) return;
         
-        const x = pitch.course.col * 100 + 50;
-        const y = pitch.course.row * 100 + 50;
+        const x = pitch.course.col * cellSize + (cellSize / 2);
+        const y = pitch.course.row * cellSize + (cellSize / 2);
         
         const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
         circle.setAttribute('cx', x);
@@ -616,7 +645,7 @@ function displayHitDirectionAnalysis(matchData, batterId) {
     
     statsList.innerHTML = '';
     
-    const directions = ['left', 'leftCenter', 'center', 'rightCenter', 'right', 'infield'];
+    const directions = ['pitcher', 'catcher', 'first', 'second', 'third', 'shortstop', 'left', 'center', 'right', 'leftCenter', 'rightCenter'];
     const directionCounts = {};
     
     directions.forEach(dir => directionCounts[dir] = 0);
