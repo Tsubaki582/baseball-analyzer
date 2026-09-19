@@ -444,11 +444,22 @@ function initializeTeamSetup() {
 /**
  * 選手モーダルを開く
  */
-function openPlayerModal(teamType) {
+function openPlayerModal(teamType, playerId = null) {
     getTeamSetupData(teamType);
     UIState.setEditingTeam(teamType);
+    UIState.setEditingPlayer(playerId, true, teamType, 'master');
     resetPlayerModalState();
-    document.getElementById('playerModalTitle').textContent = `${teamType === 'own' ? '自チーム' : '相手チーム'}の選手を追加`;
+    const teamData = getTeamSetupData(teamType);
+    const player = playerId ? findTeamPlayer(teamData, playerId) : null;
+    document.getElementById('playerModalTitle').textContent = `${teamType === 'own' ? '自チーム' : '相手チーム'}の選手${player ? 'を編集' : 'を追加'}`;
+    document.getElementById('confirmPlayerModal').textContent = player ? '更新' : '保存';
+
+    if (player) {
+        document.getElementById('playerName').value = player.name;
+        document.getElementById('playerBatting').value = player.batting;
+        document.getElementById('playerThrow').value = player.throw;
+        setPlayerModalType(player.playerType || player.playerTypes?.[0] || 'fielder');
+    }
     showModal('playerModal');
 }
 
@@ -460,6 +471,7 @@ function savePlayerFromModal() {
     const name = document.getElementById('playerName').value;
     const batting = document.getElementById('playerBatting').value;
     const throw_ = document.getElementById('playerThrow').value;
+    const editingPlayerId = UIState.editingPlayer?.id;
 
     if (!teamType) {
         showToast('追加先のチームを選び直してください');
@@ -474,9 +486,11 @@ function savePlayerFromModal() {
 
     const playerType = document.getElementById('playerModal').dataset.playerType || 'fielder';
     const teamData = getTeamSetupData(teamType);
+    const existingPlayer = editingPlayerId ? findTeamPlayer(teamData, editingPlayerId) : null;
     const player = {
         ...initializePlayerData(),
-        id: generateId(),
+        ...deepCopy(existingPlayer || {}),
+        id: existingPlayer?.id || generateId(),
         name: name.trim(),
         batting,
         throw: throw_,
@@ -484,11 +498,15 @@ function savePlayerFromModal() {
         playerTypes: [playerType]
     };
 
-    teamData.players.push(player);
+    if (existingPlayer) {
+        teamData.players = teamData.players.map(item => item.id === player.id ? player : item);
+    } else {
+        teamData.players.push(player);
+    }
     teamData.confirmed = false;
     renderTeamSetup();
     closePlayerModal();
-    showToast(`${player.name}を登録しました`);
+    showToast(`${player.name}を${existingPlayer ? '更新' : '登録'}しました`);
 }
 
 function getTeamSetupData(teamType) {
@@ -527,6 +545,7 @@ function resetPlayerModalState() {
 function closePlayerModal() {
     resetPlayerModalState();
     UIState.setEditingTeam(null);
+    UIState.setEditingPlayer(null, true, null, null);
     hideModal('playerModal');
 }
 
@@ -586,8 +605,14 @@ function renderRegisteredPlayers(teamType, teamData) {
         removeButton.textContent = '削除';
         removeButton.addEventListener('click', () => removeRegisteredPlayer(teamType, player.id));
 
+        const editButton = document.createElement('button');
+        editButton.className = 'player-item-btn';
+        editButton.textContent = '編集';
+        editButton.addEventListener('click', () => openPlayerModal(teamType, player.id));
+
         const actions = document.createElement('div');
         actions.className = 'player-item-actions';
+        actions.appendChild(editButton);
         actions.appendChild(removeButton);
 
         item.appendChild(badge);
@@ -782,11 +807,13 @@ function createPositionSelect(teamType, currentPosition, lineupIndex) {
 function collectAssignedPlayerIds(teamData, context) {
     const assignedIds = new Set();
 
-    teamData.lineup.forEach((slot, index) => {
-        if (!slot.playerId) return;
-        if (context.type === 'lineup' && context.index === index) return;
-        assignedIds.add(slot.playerId);
-    });
+    if (context.type !== 'pitcher') {
+        teamData.lineup.forEach((slot, index) => {
+            if (!slot.playerId) return;
+            if (context.type === 'lineup' && context.index === index) return;
+            assignedIds.add(slot.playerId);
+        });
+    }
 
     teamData.bench.forEach((slot, index) => {
         if (!slot.playerId) return;
@@ -933,10 +960,6 @@ function findDuplicateAssignedPlayer(teamData) {
             return findTeamPlayer(teamData, playerId);
         }
         seenLineup.add(playerId);
-    }
-
-    if (teamData.pitcherId && seenLineup.has(teamData.pitcherId)) {
-        return findTeamPlayer(teamData, teamData.pitcherId);
     }
 
     for (const playerId of benchIds) {
