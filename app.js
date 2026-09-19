@@ -418,11 +418,25 @@ function updateRunnersDisplay() {
  * チーム設定画面を初期化
  */
 function initializeTeamSetup() {
+    const ownTeamNameInput = document.getElementById('ownTeamName');
+    const opponentTeamNameInput = document.getElementById('opponentTeamName');
+    const preservedOwnName = ownTeamNameInput?.value || '';
+    const preservedOpponentName = opponentTeamNameInput?.value || document.getElementById('opponent')?.value || '';
+    const ownTeamData = createEmptyTeamSetupData('own');
+    const opponentTeamData = createEmptyTeamSetupData('opponent');
+
+    ownTeamData.name = preservedOwnName;
+    opponentTeamData.name = preservedOpponentName;
+
     UIState.reset();
-    UIState.setTempTeamData('own', createEmptyTeamSetupData('own'));
-    UIState.setTempTeamData('opponent', createEmptyTeamSetupData('opponent'));
-    document.getElementById('ownTeamName').value = '';
-    document.getElementById('opponentTeamName').value = '';
+    UIState.setTempTeamData('own', ownTeamData);
+    UIState.setTempTeamData('opponent', opponentTeamData);
+    if (ownTeamNameInput) {
+        ownTeamNameInput.value = preservedOwnName;
+    }
+    if (opponentTeamNameInput) {
+        opponentTeamNameInput.value = preservedOpponentName;
+    }
     switchTab('own-team');
     renderTeamSetup();
 }
@@ -768,11 +782,13 @@ function createPositionSelect(teamType, currentPosition, lineupIndex) {
 function collectAssignedPlayerIds(teamData, context) {
     const assignedIds = new Set();
 
-    teamData.lineup.forEach((slot, index) => {
-        if (!slot.playerId) return;
-        if (context.type === 'lineup' && context.index === index) return;
-        assignedIds.add(slot.playerId);
-    });
+    if (context.type !== 'pitcher') {
+        teamData.lineup.forEach((slot, index) => {
+            if (!slot.playerId) return;
+            if (context.type === 'lineup' && context.index === index) return;
+            assignedIds.add(slot.playerId);
+        });
+    }
 
     teamData.bench.forEach((slot, index) => {
         if (!slot.playerId) return;
@@ -909,18 +925,26 @@ function validateSingleTeamSetup(teamType, requireConfirmed = false) {
 }
 
 function findDuplicateAssignedPlayer(teamData) {
-    const counts = new Map();
-    const register = (playerId) => {
-        if (!playerId) return;
-        counts.set(playerId, (counts.get(playerId) || 0) + 1);
-    };
+    const lineupIds = teamData.lineup.map(slot => slot.playerId).filter(Boolean);
+    const benchIds = teamData.bench.map(slot => slot.playerId).filter(Boolean);
+    const seenLineup = new Set();
+    const seenBench = new Set();
 
-    teamData.lineup.forEach(slot => register(slot.playerId));
-    teamData.bench.forEach(slot => register(slot.playerId));
-    register(teamData.pitcherId);
+    for (const playerId of lineupIds) {
+        if (seenLineup.has(playerId)) {
+            return findTeamPlayer(teamData, playerId);
+        }
+        seenLineup.add(playerId);
+    }
 
-    const duplicateId = Array.from(counts.entries()).find(([, count]) => count > 1)?.[0];
-    return duplicateId ? findTeamPlayer(teamData, duplicateId) : null;
+    for (const playerId of benchIds) {
+        if (seenBench.has(playerId) || seenLineup.has(playerId) || playerId === teamData.pitcherId) {
+            return findTeamPlayer(teamData, playerId);
+        }
+        seenBench.add(playerId);
+    }
+
+    return null;
 }
 
 function findDuplicatePosition(teamData) {
