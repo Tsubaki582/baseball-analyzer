@@ -129,8 +129,11 @@ function setupEventListeners() {
         savePlayerFromModal();
     });
     addSafeEventListener('modalOverlay', 'click', () => {
-        closePlayerModal();
-        hideModal('runnersModal');
+        if (document.getElementById('playerModal')?.classList.contains('active')) {
+            closePlayerModal();
+        } else if (document.getElementById('runnersModal')?.classList.contains('active')) {
+            hideModal('runnersModal');
+        }
     });
 
     document.querySelectorAll('.player-type-tab').forEach(button => {
@@ -291,6 +294,17 @@ function validateTeamSetup() {
 function startGame() {
     const ownTeamData = getTeamSetupData('own');
     const opponentTeamData = getTeamSetupData('opponent');
+    const ownLineup = buildGameLineup(ownTeamData);
+    const opponentLineup = buildGameLineup(opponentTeamData);
+    const ownBench = buildGameBench(ownTeamData);
+    const opponentBench = buildGameBench(opponentTeamData);
+    const ownPitcher = buildGamePitcher(ownTeamData);
+    const opponentPitcher = buildGamePitcher(opponentTeamData);
+
+    if (ownLineup.length !== 9 || opponentLineup.length !== 9 || !ownPitcher || !opponentPitcher) {
+        showToast('選手データが更新されたため、オーダーを確認し直してください');
+        return;
+    }
 
     // 試合データ初期化
     currentMatch = initializeMatchData();
@@ -305,12 +319,12 @@ function startGame() {
     // チーム情報を設定
     currentMatch.ownTeam.name = ownTeamData.name;
     currentMatch.opponentTeam.name = opponentTeamData.name;
-    currentMatch.ownTeam.lineup = buildGameLineup(ownTeamData);
-    currentMatch.opponentTeam.lineup = buildGameLineup(opponentTeamData);
-    currentMatch.ownTeam.bench = buildGameBench(ownTeamData);
-    currentMatch.opponentTeam.bench = buildGameBench(opponentTeamData);
-    currentMatch.ownTeam.pitcher = buildGamePitcher(ownTeamData);
-    currentMatch.opponentTeam.pitcher = buildGamePitcher(opponentTeamData);
+    currentMatch.ownTeam.lineup = ownLineup;
+    currentMatch.opponentTeam.lineup = opponentLineup;
+    currentMatch.ownTeam.bench = ownBench;
+    currentMatch.opponentTeam.bench = opponentBench;
+    currentMatch.ownTeam.pitcher = ownPitcher;
+    currentMatch.opponentTeam.pitcher = opponentPitcher;
     
     // ゲーム状態を初期化
     currentMatch.gameState.isActive = true;
@@ -857,6 +871,9 @@ function validateSingleTeamSetup(teamType, requireConfirmed = false) {
             errors.push(`${teamLabel}の${index + 1}番打者が未設定です`);
             return;
         }
+        if (!findTeamPlayer(teamData, slot.playerId)) {
+            errors.push(`${teamLabel}の${index + 1}番に設定した選手が登録一覧に存在しません`);
+        }
         if (!slot.position) {
             errors.push(`${teamLabel}の${index + 1}番の守備位置を選択してください`);
         }
@@ -874,6 +891,8 @@ function validateSingleTeamSetup(teamType, requireConfirmed = false) {
 
     if (!teamData.pitcherId) {
         errors.push(`${teamLabel}の投手が設定されていません`);
+    } else if (!findTeamPlayer(teamData, teamData.pitcherId)) {
+        errors.push(`${teamLabel}の投手に設定した選手が登録一覧に存在しません`);
     }
 
     if (requireConfirmed && !teamData.confirmed) {
@@ -919,11 +938,11 @@ function findTeamPlayer(teamData, playerId) {
 function buildGameLineup(teamData) {
     return teamData.lineup.map(slot => {
         const player = findTeamPlayer(teamData, slot.playerId);
-        return buildGamePlayer(player, {
+        return player ? buildGamePlayer(player, {
             battingOrder: slot.battingOrder,
             position: slot.position
-        });
-    });
+        }) : null;
+    }).filter(Boolean);
 }
 
 function buildGameBench(teamData) {
