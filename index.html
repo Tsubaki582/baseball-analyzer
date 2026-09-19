@@ -269,10 +269,25 @@
                     <h3>走者</h3>
                     <button class="btn-secondary" id="editRunners">走者を編集</button>
                 </div>
+                <div class="runner-diamond" id="runnerDiamond">
+                    <button class="runner-base base2" data-base="base2">二塁</button>
+                    <button class="runner-base base3" data-base="base3">三塁</button>
+                    <button class="runner-base home" data-base="home">本塁</button>
+                    <button class="runner-base base1" data-base="base1">一塁</button>
+                </div>
                 <div class="status-row">
                     <div class="status-item"><span class="status-label">一塁</span><span class="status-value" id="runner1">-</span></div>
                     <div class="status-item"><span class="status-label">二塁</span><span class="status-value" id="runner2">-</span></div>
                     <div class="status-item"><span class="status-label">三塁</span><span class="status-value" id="runner3">-</span></div>
+                </div>
+                <div class="runner-actions" id="runnerActions" style="display: none;">
+                    <div class="runner-actions-title" id="runnerActionsTitle">走者操作</div>
+                    <div class="runner-actions-grid">
+                        <button class="btn-secondary runner-action-btn" data-action="toggle">配置/削除</button>
+                        <button class="btn-secondary runner-action-btn" data-action="advance">進塁</button>
+                        <button class="btn-secondary runner-action-btn" data-action="retreat">後退</button>
+                        <button class="btn-secondary runner-action-btn" data-action="score">得点</button>
+                    </div>
                 </div>
             </div>
 
@@ -283,8 +298,9 @@
                     <button class="pitch-btn" data-type="slider">スライダー</button>
                     <button class="pitch-btn" data-type="curve">カーブ</button>
                     <button class="pitch-btn" data-type="fork">フォーク</button>
-                    <button class="pitch-btn" data-type="changeup">チェンジアップ</button>
-                    <button class="pitch-btn" data-type="other">その他</button>
+                    <button class="pitch-btn" data-type="change">チェンジ</button>
+                    <button class="pitch-btn" data-type="twoSeam">ツーシーム</button>
+                    <button class="pitch-btn" data-type="split">スプリット</button>
                 </div>
 
                 <div class="form-group">
@@ -318,14 +334,14 @@
 
             <div class="card" id="inPlaySection" style="display: none;">
                 <h3>インプレー情報</h3>
+                <div class="input-step">① 打球種類を選択</div>
                 <div class="pitch-type-grid">
                     <button class="hit-type-btn" data-hit="groundBall">ゴロ</button>
                     <button class="hit-type-btn" data-hit="fly">フライ</button>
                     <button class="hit-type-btn" data-hit="liner">ライナー</button>
-                    <button class="hit-type-btn" data-hit="popFly">ポップ</button>
                     <button class="hit-type-btn" data-hit="bunt">バント</button>
-                    <button class="hit-type-btn" data-hit="other">その他</button>
                 </div>
+                <div class="input-step">② 打球方向を選択</div>
                 <div class="field-diagram" id="fieldDiagram"></div>
                 <div class="direction-info">選択した方向: <span id="selectedDirection">未選択</span></div>
                 <div class="form-group">
@@ -345,6 +361,22 @@
                         <option value="sacFly">犠飛</option>
                         <option value="other">その他</option>
                     </select>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>試合進行管理</h3>
+                <div class="progress-control-grid">
+                    <button class="btn-secondary" id="skipToNextBatter">次の打者へ</button>
+                    <button class="btn-secondary" id="backToPreviousBatter">打者を戻す</button>
+                    <button class="btn-secondary" id="goToNextHalfInning">次の半イニングへ</button>
+                    <button class="btn-secondary" id="goToPreviousHalfInning">前の半イニングへ</button>
+                    <button class="btn-secondary" id="switchToBottom">表→裏へ変更</button>
+                    <button class="btn-secondary" id="switchToNextTop">裏→次の回表へ変更</button>
+                </div>
+                <div class="manual-inning-row">
+                    <input type="number" id="manualInningInput" class="form-input" min="1" max="99" placeholder="イニング">
+                    <button class="btn-secondary" id="moveToManualInning">任意イニングへ移動</button>
                 </div>
             </div>
 
@@ -508,6 +540,9 @@
 
     <!-- モーダルオーバーレイ -->
     <div id="modalOverlay" class="modal-overlay"></div>
+    <div id="transitionOverlay" class="transition-overlay">
+        <div class="transition-message" id="transitionMessage"></div>
+    </div>
 
     <!-- スクリプト読み込み -->
     <script src="utils.js"></script>

@@ -592,42 +592,21 @@ select:focus {
     height: 100%;
 }
 
-.zone-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 4px;
-    padding: 8px;
-    aspect-ratio: 1;
-}
-
 .zone-cell {
-    background-color: white;
-    border: 2px solid var(--border-color);
-    border-radius: 4px;
     cursor: pointer;
     transition: all 0.2s ease;
-    position: relative;
 }
 
-.zone-cell:active {
-    background-color: var(--primary-blue-light);
-    border-color: var(--primary-blue);
+.zone-cell.ball-zone {
+    fill: #ffffff;
+}
+
+.zone-cell.strike-zone-cell {
+    fill: #f3f8ff;
 }
 
 .zone-cell.selected {
-    background-color: var(--primary-blue);
-    border-color: var(--primary-blue);
-}
-
-.zone-cell.selected::after {
-    content: '✓';
-    position: absolute;
-    color: white;
-    font-weight: 700;
-    font-size: 24px;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
+    fill: var(--primary-blue);
 }
 
 .zone-cell-label {
@@ -671,35 +650,16 @@ select:focus {
     height: 100%;
 }
 
-.direction-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 6px;
-    padding: 8px;
-}
-
-.direction-cell {
-    background-color: white;
-    border: 2px solid var(--border-color);
-    border-radius: 6px;
-    padding: 8px;
-    text-align: center;
-    font-size: 12px;
+.field-node {
+    fill: #e6f2ff;
+    stroke: #0066cc;
+    stroke-width: 2;
     cursor: pointer;
     transition: all 0.2s ease;
-    font-weight: 500;
-    color: var(--text-primary);
 }
 
-.direction-cell:active {
-    background-color: var(--primary-blue-light);
-    border-color: var(--primary-blue);
-}
-
-.direction-cell.selected {
-    background-color: var(--primary-blue);
-    color: white;
-    border-color: var(--primary-blue);
+.field-node.selected {
+    fill: var(--primary-blue);
 }
 
 /* ============================================
@@ -711,6 +671,106 @@ select:focus {
     grid-template-columns: repeat(2, 1fr);
     gap: 8px;
     margin-bottom: 16px;
+}
+
+.input-step {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+}
+
+.runner-diamond {
+    position: relative;
+    width: min(220px, 90%);
+    aspect-ratio: 1;
+    margin: 0 auto 12px;
+}
+
+.runner-base {
+    position: absolute;
+    width: 64px;
+    height: 64px;
+    border-radius: 12px;
+    background: #ffffff;
+    border: 2px solid var(--border-color);
+    font-size: 13px;
+    color: var(--text-primary);
+}
+
+.runner-base.base2 { top: 0; left: 50%; transform: translateX(-50%); }
+.runner-base.base3 { top: 50%; left: 0; transform: translateY(-50%); }
+.runner-base.base1 { top: 50%; right: 0; transform: translateY(-50%); }
+.runner-base.home { bottom: 0; left: 50%; transform: translateX(-50%); }
+
+.runner-base span,
+.runner-base {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.runner-base.occupied {
+    background: var(--primary-blue);
+    color: #fff;
+    border-color: var(--primary-blue);
+}
+
+.runner-actions {
+    border-top: 1px solid var(--border-color);
+    padding-top: 10px;
+}
+
+.runner-actions-title {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+}
+
+.runner-actions-grid,
+.progress-control-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.runner-action-btn,
+.progress-control-grid .btn-secondary {
+    padding: 10px 8px;
+    font-size: 13px;
+}
+
+.manual-inning-row {
+    margin-top: 10px;
+    display: flex;
+    gap: 8px;
+}
+
+.manual-inning-row .form-input {
+    max-width: 100px;
+}
+
+.transition-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(255, 255, 255, 0.88);
+    z-index: 40;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 24px;
+}
+
+.transition-overlay.active {
+    display: flex;
+}
+
+.transition-message {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--primary-blue);
+    line-height: 1.5;
+    white-space: pre-line;
 }
 
 /* ============================================

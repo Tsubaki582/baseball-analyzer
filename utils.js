@@ -33,11 +33,10 @@ function getPitchTypeName(type) {
         'slider': 'スライダー',
         'curve': 'カーブ',
         'fork': 'フォーク',
-        'changeup': 'チェンジアップ',
-        'cutter': 'カットボール',
+        'change': 'チェンジ',
+        'changeup': 'チェンジ',
         'twoSeam': 'ツーシーム',
-        'shoot': 'シュート',
-        'other': 'その他'
+        'split': 'スプリット'
     };
     return pitchTypes[type] || type;
 }
@@ -65,9 +64,7 @@ function getHitTypeName(type) {
         'groundBall': 'ゴロ',
         'fly': 'フライ',
         'liner': 'ライナー',
-        'popFly': 'ポップ',
-        'bunt': 'バント',
-        'other': 'その他'
+        'bunt': 'バント'
     };
     return hitTypes[type] || type;
 }
@@ -77,12 +74,17 @@ function getHitTypeName(type) {
  */
 function getDirectionName(direction) {
     const directions = {
+        'pitcher': '投手',
+        'catcher': '捕手',
+        'first': '一塁',
+        'second': '二塁',
+        'third': '三塁',
+        'shortstop': '遊撃',
         'left': '左方向',
         'leftCenter': '左中間',
-        'center': '中方向',
+        'center': '中堅',
         'rightCenter': '右中間',
-        'right': '右方向',
-        'infield': '内野',
+        'right': '右翼',
         'thirdShort': '三遊間',
         'shortRegular': '遊撃手正面',
         'secondShort': '二遊間',
@@ -122,17 +124,48 @@ function getAtBatResultName(result) {
  */
 function getCourseName(row, col) {
     const courseMap = {
-        '0-0': '外角高め',
-        '0-1': '中央高め',
-        '0-2': '内角高め',
-        '1-0': '外角',
-        '1-1': '中央',
-        '1-2': '内角',
-        '2-0': '外角低め',
-        '2-1': '中央低め',
-        '2-2': '内角低め'
+        '0-0': 'ボールゾーン(左上)',
+        '0-1': 'ボールゾーン(上)',
+        '0-2': 'ボールゾーン(上中央)',
+        '0-3': 'ボールゾーン(上)',
+        '0-4': 'ボールゾーン(右上)',
+        '1-0': 'ボールゾーン(左)',
+        '1-1': 'ストライクゾーン(左上)',
+        '1-2': 'ストライクゾーン(上)',
+        '1-3': 'ストライクゾーン(右上)',
+        '1-4': 'ボールゾーン(右)',
+        '2-0': 'ボールゾーン(左)',
+        '2-1': 'ストライクゾーン(左)',
+        '2-2': 'ストライクゾーン(中央)',
+        '2-3': 'ストライクゾーン(右)',
+        '2-4': 'ボールゾーン(右)',
+        '3-0': 'ボールゾーン(左)',
+        '3-1': 'ストライクゾーン(左下)',
+        '3-2': 'ストライクゾーン(下)',
+        '3-3': 'ストライクゾーン(右下)',
+        '3-4': 'ボールゾーン(右)',
+        '4-0': 'ボールゾーン(左下)',
+        '4-1': 'ボールゾーン(下)',
+        '4-2': 'ボールゾーン(下中央)',
+        '4-3': 'ボールゾーン(下)',
+        '4-4': 'ボールゾーン(右下)'
     };
-    return courseMap[`${row}-${col}`] || '不明';
+    if (courseMap[`${row}-${col}`]) return courseMap[`${row}-${col}`];
+    if (row <= 2 && col <= 2) {
+        const legacy = {
+            '0-0': '外角高め',
+            '0-1': '中央高め',
+            '0-2': '内角高め',
+            '1-0': '外角',
+            '1-1': '中央',
+            '1-2': '内角',
+            '2-0': '外角低め',
+            '2-1': '中央低め',
+            '2-2': '内角低め'
+        };
+        return legacy[`${row}-${col}`] || '不明';
+    }
+    return '不明';
 }
 
 /**

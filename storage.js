@@ -98,7 +98,7 @@ function initializePitchData() {
         sequenceInAB: 0,   // この打席での球数
         pitchType: '',     // ストレート等
         speed: null,
-        course: null,      // {row: 0-2, col: 0-2}
+        course: null,      // {row: 0-4, col: 0-4}
         perspective: 'catcher',
         result: '',        // 見逃し、空振り等
         balls: 0,
