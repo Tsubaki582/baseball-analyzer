@@ -1415,17 +1415,25 @@ function advanceRunnersForHomerun() {
 function advanceRunnersForWalk(batter) {
     if (!currentMatch) return 0;
     const gs = currentMatch.gameState;
-    const nextRunners = { ...gs.runners };
+    const current = gs.runners;
+    const nextRunners = { ...current };
     let runs = 0;
 
-    if (gs.runners.base1) {
-        if (gs.runners.base2) {
-            if (gs.runners.base3) {
-                runs++;
-            }
-            nextRunners.base3 = gs.runners.base2;
-        }
-        nextRunners.base2 = gs.runners.base1;
+    const forceAtFirst = Boolean(current.base1);
+    const forceAtSecond = Boolean(current.base1 && current.base2);
+    const forceAtThird = Boolean(current.base1 && current.base2 && current.base3);
+
+    if (forceAtThird) {
+        runs++;
+        nextRunners.base3 = current.base2;
+        nextRunners.base2 = current.base1;
+        nextRunners.base1 = batter;
+    } else if (forceAtSecond) {
+        nextRunners.base3 = current.base2;
+        nextRunners.base2 = current.base1;
+        nextRunners.base1 = batter;
+    } else if (forceAtFirst) {
+        nextRunners.base2 = current.base1;
         nextRunners.base1 = batter;
     } else {
         nextRunners.base1 = batter;
@@ -1504,7 +1512,13 @@ function handleRunnerAction(action) {
             addRunsToBattingTeam(1);
         }
     } else if (selectedRunnerBase === 'home' && action === 'score') {
-        addRunsToBattingTeam(1);
+        if (gs.runners.base3) {
+            gs.runners.base3 = null;
+            addRunsToBattingTeam(1);
+        } else {
+            showToast('三塁走者がいないため得点にできません');
+            return;
+        }
     }
 
     saveCurrentMatch(currentMatch);

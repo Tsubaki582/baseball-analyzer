@@ -122,8 +122,8 @@ function getAtBatResultName(result) {
 /**
  * コース名を取得 (座標ベース)
  */
-function getCourseName(row, col) {
-    const courseMap = {
+function getCourseName(row, col, format = 'auto') {
+    const modernCourseMap = {
         '0-0': 'ボールゾーン(左上)',
         '0-1': 'ボールゾーン(上)',
         '0-2': 'ボールゾーン(上中央)',
@@ -150,22 +150,30 @@ function getCourseName(row, col) {
         '4-3': 'ボールゾーン(下)',
         '4-4': 'ボールゾーン(右下)'
     };
-    if (courseMap[`${row}-${col}`]) return courseMap[`${row}-${col}`];
-    if (row <= 2 && col <= 2) {
-        const legacy = {
-            '0-0': '外角高め',
-            '0-1': '中央高め',
-            '0-2': '内角高め',
-            '1-0': '外角',
-            '1-1': '中央',
-            '1-2': '内角',
-            '2-0': '外角低め',
-            '2-1': '中央低め',
-            '2-2': '内角低め'
-        };
-        return legacy[`${row}-${col}`] || '不明';
+    const legacyCourseMap = {
+        '0-0': '外角高め',
+        '0-1': '中央高め',
+        '0-2': '内角高め',
+        '1-0': '外角',
+        '1-1': '中央',
+        '1-2': '内角',
+        '2-0': '外角低め',
+        '2-1': '中央低め',
+        '2-2': '内角低め'
+    };
+    const key = `${row}-${col}`;
+
+    if (format === 'legacy') {
+        return legacyCourseMap[key] || '不明';
     }
-    return '不明';
+    if (format === 'modern') {
+        return modernCourseMap[key] || '不明';
+    }
+
+    if (row <= 2 && col <= 2) {
+        return legacyCourseMap[key] || '不明';
+    }
+    return modernCourseMap[key] || '不明';
 }
 
 /**

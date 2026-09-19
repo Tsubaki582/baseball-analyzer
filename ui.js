@@ -188,7 +188,7 @@ function selectCourse(row, col, perspective) {
     const selected = document.querySelector(`[data-row="${row}"][data-col="${col}"][data-perspective="${perspective}"]`);
     if (selected) {
         selected.classList.add('selected');
-        document.getElementById('selectedCourse').textContent = getCourseName(row, col);
+        document.getElementById('selectedCourse').textContent = getCourseName(row, col, 'modern');
         if (typeof selectedCourseData !== 'undefined') {
             selectedCourseData = { row, col, perspective };
         }
