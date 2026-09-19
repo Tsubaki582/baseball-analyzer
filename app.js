@@ -387,9 +387,9 @@ function updatePlayerDisplay() {
     // 現在の打者
     if (team.lineup[gs.currentBatterIndex]) {
         const batter = team.lineup[gs.currentBatterIndex];
-        document.getElementById('bitterNumber').textContent = batter.number;
-        document.getElementById('bitterName').textContent = batter.name;
-        document.getElementById('bitterMeta').textContent = `${gs.currentBatterIndex + 1}番`;
+        document.getElementById('batterNumber').textContent = batter.number;
+        document.getElementById('batterName').textContent = batter.name;
+        document.getElementById('batterMeta').textContent = `${gs.currentBatterIndex + 1}番`;
     }
     
     // 現在の投手
@@ -821,7 +821,11 @@ function removeRegisteredPlayer(teamType, playerId) {
             slot.position = '';
         }
     });
-    teamData.bench = teamData.bench.filter(slot => slot.playerId !== playerId);
+    teamData.bench.forEach(slot => {
+        if (slot.playerId === playerId) {
+            slot.playerId = '';
+        }
+    });
     if (teamData.pitcherId === playerId) {
         teamData.pitcherId = '';
     }
@@ -893,6 +897,8 @@ function validateSingleTeamSetup(teamType, requireConfirmed = false) {
         errors.push(`${teamLabel}の投手が設定されていません`);
     } else if (!findTeamPlayer(teamData, teamData.pitcherId)) {
         errors.push(`${teamLabel}の投手に設定した選手が登録一覧に存在しません`);
+    } else if (!findTeamPlayer(teamData, teamData.pitcherId).playerTypes.includes('pitcher')) {
+        errors.push(`${teamLabel}の投手には投手登録済みの選手を設定してください`);
     }
 
     if (requireConfirmed && !teamData.confirmed) {
