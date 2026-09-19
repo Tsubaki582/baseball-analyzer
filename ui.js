@@ -64,7 +64,9 @@ function switchTab(tabName) {
     });
     
     // 対応するタブコンテンツを表示
+    const normalizedTabName = tabName.replace(/-([a-z])/g, (_, char) => char.toUpperCase());
     document.getElementById(`${tabName}Tab`)?.classList.add('active');
+    document.getElementById(`${normalizedTabName}Tab`)?.classList.add('active');
 }
 
 /**
