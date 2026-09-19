@@ -761,6 +761,30 @@ select:focus {
     margin-bottom: 8px;
 }
 
+.bright-team-setup {
+    background: linear-gradient(180deg, #f7fbff 0%, #ffffff 18%, #f8fbfd 100%);
+}
+
+.section-heading {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.section-heading.compact {
+    align-items: center;
+}
+
+.section-description {
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    margin-top: 4px;
+}
+
+.master-player-list,
 .lineup-list,
 .bench-list {
     display: flex;
@@ -769,6 +793,11 @@ select:focus {
     margin-bottom: 16px;
 }
 
+.master-player-list {
+    gap: 12px;
+}
+
+.player-master-item,
 .player-item {
     display: flex;
     align-items: center;
@@ -777,6 +806,30 @@ select:focus {
     padding: 12px;
     border-radius: 8px;
     border: 1px solid var(--border-color);
+}
+
+.player-master-item {
+    background: linear-gradient(135deg, #ffffff 0%, #f4fbff 100%);
+}
+
+.player-master-info {
+    flex: 1;
+}
+
+.player-type-badge {
+    min-width: 48px;
+    padding: 8px 10px;
+    border-radius: 999px;
+    text-align: center;
+    font-size: 12px;
+    font-weight: 700;
+    color: #034d63;
+    background-color: #dff7ff;
+}
+
+.player-type-badge.pitcher {
+    color: #0f3d91;
+    background-color: #d9e8ff;
 }
 
 .player-item-number {
@@ -827,6 +880,170 @@ select:focus {
     border-color: var(--secondary-red);
 }
 
+.empty-state {
+    padding: 16px;
+    border-radius: 12px;
+    background-color: #f5f7fa;
+    color: var(--text-secondary);
+    text-align: center;
+    border: 1px dashed var(--border-color);
+}
+
+.empty-state.compact {
+    margin-bottom: 0;
+}
+
+.order-sheet-card {
+    background: linear-gradient(180deg, #ffffff 0%, #f8fdff 100%);
+    border-color: #dceef7;
+}
+
+.order-sheet-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.order-sheet-label {
+    font-size: 12px;
+    font-weight: 700;
+    color: #11a7c9;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.order-sheet-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.order-action-button {
+    padding-inline: 18px;
+}
+
+.order-section {
+    margin-bottom: 20px;
+}
+
+.order-section:last-child {
+    margin-bottom: 0;
+}
+
+.order-list,
+.pitcher-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.order-row-card {
+    display: grid;
+    grid-template-columns: 48px minmax(0, 1.3fr) minmax(0, 0.9fr) minmax(0, 1fr) auto;
+    gap: 12px;
+    align-items: center;
+    padding: 14px;
+    border-radius: 16px;
+    background-color: #ffffff;
+    border: 1px solid #d9ebf3;
+    box-shadow: 0 6px 18px rgba(17, 167, 201, 0.08);
+}
+
+.pitcher-row {
+    grid-template-columns: 48px minmax(0, 1.4fr) minmax(0, 1fr);
+}
+
+.order-slot-label {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    background-color: #e8f8fd;
+    color: #0c2b55;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.order-slot-label.pitcher {
+    background-color: #dfe9ff;
+}
+
+.order-slot-label.bench {
+    width: auto;
+    min-width: 48px;
+    padding: 0 10px;
+}
+
+.order-field {
+    min-width: 0;
+}
+
+.order-field.wide {
+    min-width: 0;
+}
+
+.order-field-label {
+    display: block;
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-bottom: 6px;
+}
+
+.order-player-summary {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.order-player-name {
+    font-size: 15px;
+    font-weight: 700;
+    color: #102a43;
+}
+
+.order-player-meta {
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.simple-player-display {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px;
+}
+
+.player-badge {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background-color: #e5f4ff;
+    color: #0c4a6e;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+}
+
+.card-header {
+    padding: 16px 16px 0;
+}
+
+.card-body {
+    padding: 0 16px 16px;
+}
+
+.dual-button-row {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+}
+
 /* ============================================
    モーダル
    ============================================ */
@@ -838,7 +1055,7 @@ select:focus {
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.5);
+    background-color: transparent;
     z-index: 50;
     align-items: flex-end;
     justify-content: center;
@@ -858,6 +1075,10 @@ select:focus {
     flex-direction: column;
     box-shadow: var(--shadow-medium);
     animation: slideUp 0.3s ease;
+}
+
+.bright-modal {
+    border: 1px solid #dceef7;
 }
 
 @keyframes slideUp {
@@ -900,6 +1121,41 @@ select:focus {
 
 .modal-footer button {
     flex: 1;
+}
+
+.modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background-color: rgba(15, 23, 42, 0.48);
+    z-index: 45;
+}
+
+.modal-overlay.active {
+    display: block;
+}
+
+.player-type-switch {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    padding: 6px;
+    background-color: #eef7fb;
+    border-radius: 14px;
+    margin-bottom: 16px;
+}
+
+.player-type-tab {
+    padding: 14px 16px;
+    border-radius: 12px;
+    background-color: transparent;
+    color: #0f294d;
+}
+
+.player-type-tab.active {
+    background-color: #11a7c9;
+    color: #ffffff;
+    box-shadow: 0 4px 14px rgba(17, 167, 201, 0.28);
 }
 
 /* ============================================
@@ -1269,6 +1525,17 @@ select:focus {
 
     .final-score-value {
         font-size: 48px;
+    }
+
+    .order-row-card,
+    .pitcher-row {
+        grid-template-columns: 1fr;
+    }
+
+    .order-sheet-header,
+    .section-heading {
+        flex-direction: column;
+        align-items: stretch;
     }
 }
 

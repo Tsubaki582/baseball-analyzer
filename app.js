@@ -8,6 +8,33 @@ let selectedCourseData = null;
 let selectedHitData = null;
 let selectedDirectionData = null;
 
+const STARTER_POSITIONS = ['P', 'C', '1B', '2B', '3B', 'SS', 'LF', 'CF', 'RF', 'DH'];
+const DUPLICATE_LOCKED_POSITIONS = STARTER_POSITIONS.filter(position => position !== 'DH');
+
+function createEmptyTeamSetupData(teamType) {
+    return {
+        teamType,
+        name: '',
+        players: [],
+        lineup: Array.from({ length: 9 }, (_, index) => ({
+            battingOrder: index + 1,
+            playerId: '',
+            position: ''
+        })),
+        pitcherId: '',
+        bench: [],
+        confirmed: false
+    };
+}
+
+function addSafeEventListener(id, eventName, handler) {
+    const element = document.getElementById(id);
+    if (element) {
+        element.addEventListener(eventName, handler);
+    }
+    return element;
+}
+
 /**
  * アプリケーション初期化
  */
@@ -31,103 +58,101 @@ function initializeApp() {
  * イベントリスナー設定
  */
 function setupEventListeners() {
-    // ホーム画面
-    document.getElementById('btnNewGame').addEventListener('click', () => {
+    addSafeEventListener('btnNewGame', 'click', () => {
         showScreen('matchSetupScreen');
-        document.getElementById('matchDate').value = getTodayDate();
+        const matchDate = document.getElementById('matchDate');
+        if (matchDate) {
+            matchDate.value = getTodayDate();
+        }
     });
-    
-    document.getElementById('btnPastGames').addEventListener('click', () => {
-        displayMatchesList();
+
+    addSafeEventListener('btnPastGames', 'click', () => {
+        if (document.getElementById('matchesList')) {
+            displayMatchesList();
+        }
         showScreen('pastGamesScreen');
     });
-    
-    document.getElementById('btnPlayerManagement').addEventListener('click', () => {
+
+    addSafeEventListener('btnPlayerManagement', 'click', () => {
         showScreen('playerManagementScreen');
     });
-    
-    document.getElementById('btnAnalysis').addEventListener('click', () => {
-        loadAnalysisMatches();
+
+    addSafeEventListener('btnAnalysis', 'click', () => {
+        if (document.getElementById('analysisMatchSelect')) {
+            loadAnalysisMatches();
+        }
         showScreen('analysisScreen');
     });
-    
-    // 試合前設定画面
-    document.getElementById('backFromSetup').addEventListener('click', () => {
+
+    addSafeEventListener('backFromSetup', 'click', () => {
         showScreen('homeScreen');
     });
-    
-    document.getElementById('proceedToTeamSetup').addEventListener('click', () => {
+
+    addSafeEventListener('proceedToTeamSetup', 'click', () => {
         if (validateMatchSetup()) {
             showScreen('teamSetupScreen');
             initializeTeamSetup();
         }
     });
-    
-    // チーム設定画面
-    document.getElementById('backFromTeamSetup').addEventListener('click', () => {
+
+    addSafeEventListener('backFromTeamSetup', 'click', () => {
         showScreen('matchSetupScreen');
     });
-    
-    document.getElementById('startMatch').addEventListener('click', () => {
+
+    addSafeEventListener('startMatch', 'click', () => {
         if (validateTeamSetup()) {
             startGame();
         }
     });
-    
-    // タブ切り替え
+
     document.querySelectorAll('.tab-button').forEach(btn => {
         btn.addEventListener('click', (e) => {
             switchTab(e.target.getAttribute('data-tab'));
         });
     });
-    
-    // 選手追加ボタン
-    document.getElementById('addOwnPlayer').addEventListener('click', () => {
-        openPlayerModal('ownTeamLineup');
-    });
-    
-    document.getElementById('addOwnBench').addEventListener('click', () => {
-        openPlayerModal('ownTeamBench');
-    });
-    
-    document.getElementById('addOpponentPlayer').addEventListener('click', () => {
-        openPlayerModal('opponentTeamLineup');
-    });
-    
-    document.getElementById('addOpponentBench').addEventListener('click', () => {
-        openPlayerModal('opponentTeamBench');
-    });
-    
-    // 選手モーダル
-    document.getElementById('closePlayerModal').addEventListener('click', () => {
-        hideModal('playerModal');
-    });
-    
-    document.getElementById('cancelPlayerModal').addEventListener('click', () => {
-        hideModal('playerModal');
-    });
-    
-    document.getElementById('confirmPlayerModal').addEventListener('click', () => {
+
+    addSafeEventListener('ownTeamName', 'input', (e) => updateTeamName('own', e.target.value));
+    addSafeEventListener('opponentTeamName', 'input', (e) => updateTeamName('opponent', e.target.value));
+
+    addSafeEventListener('addOwnPlayer', 'click', () => openPlayerModal('own'));
+    addSafeEventListener('addOpponentPlayer', 'click', () => openPlayerModal('opponent'));
+    addSafeEventListener('addOwnBench', 'click', () => addBenchSlot('own'));
+    addSafeEventListener('addOpponentBench', 'click', () => addBenchSlot('opponent'));
+    addSafeEventListener('cancelOwnOrder', 'click', () => resetOrderSelection('own'));
+    addSafeEventListener('cancelOpponentOrder', 'click', () => resetOrderSelection('opponent'));
+    addSafeEventListener('confirmOwnOrder', 'click', () => confirmTeamOrder('own'));
+    addSafeEventListener('confirmOpponentOrder', 'click', () => confirmTeamOrder('opponent'));
+
+    addSafeEventListener('closePlayerModal', 'click', closePlayerModal);
+    addSafeEventListener('cancelPlayerModal', 'click', closePlayerModal);
+    addSafeEventListener('confirmPlayerModal', 'click', () => {
         savePlayerFromModal();
     });
-    
-    // 試合入力画面
-    document.getElementById('backFromGameInput').addEventListener('click', () => {
+    addSafeEventListener('modalOverlay', 'click', () => {
+        closePlayerModal();
+        hideModal('runnersModal');
+    });
+
+    document.querySelectorAll('.player-type-tab').forEach(button => {
+        button.addEventListener('click', () => {
+            setPlayerModalType(button.getAttribute('data-player-type'));
+        });
+    });
+
+    addSafeEventListener('backFromGameInput', 'click', () => {
         if (confirm('試合を終了しますか？')) {
             showScreen('matchEndScreen');
             displayMatchEndSummary();
         }
     });
-    
-    // 球種選択
+
     document.querySelectorAll('.pitch-btn').forEach(btn => {
         btn.addEventListener('click', function() {
             document.querySelectorAll('.pitch-btn').forEach(b => b.classList.remove('selected'));
             this.classList.add('selected');
         });
     });
-    
-    // 視点切り替え
+
     document.querySelectorAll('.perspective-btn').forEach(btn => {
         btn.addEventListener('click', function() {
             currentPerspective = this.getAttribute('data-perspective');
@@ -136,25 +161,20 @@ function setupEventListeners() {
             drawStrikeZone('strikeZone', currentPerspective);
         });
     });
-    
-    // 投球結果選択
+
     document.querySelectorAll('.result-btn').forEach(btn => {
         btn.addEventListener('click', function() {
             const result = this.getAttribute('data-result');
             document.querySelectorAll('.result-btn').forEach(b => b.classList.remove('selected'));
             this.classList.add('selected');
-            
-            // インプレーの場合は打球情報表示
+
             const inPlaySection = document.getElementById('inPlaySection');
-            if (result === 'inPlay') {
-                inPlaySection.style.display = 'block';
-            } else {
-                inPlaySection.style.display = 'none';
+            if (inPlaySection) {
+                inPlaySection.style.display = result === 'inPlay' ? 'block' : 'none';
             }
         });
     });
-    
-    // 打球種類選択
+
     document.querySelectorAll('.hit-type-btn').forEach(btn => {
         btn.addEventListener('click', function() {
             document.querySelectorAll('.hit-type-btn').forEach(b => b.classList.remove('selected'));
@@ -162,109 +182,71 @@ function setupEventListeners() {
             selectedHitData = this.getAttribute('data-hit');
         });
     });
-    
-    // 投球記録ボタン
-    document.getElementById('recordPitch').addEventListener('click', () => {
+
+    addSafeEventListener('recordPitch', 'click', () => {
         recordPitchData();
     });
-    
-    document.getElementById('undoLastPitch').addEventListener('click', () => {
+
+    addSafeEventListener('undoLastPitch', 'click', () => {
         if (currentMatch && undoLastPitch(currentMatch)) {
             updateGameDisplay();
             showToast('最後の投球を取消しました');
         }
     });
-    
-    // 走者編集
-    document.getElementById('editRunners').addEventListener('click', () => {
+
+    addSafeEventListener('editRunners', 'click', () => {
         updateRunnersModal();
         showModal('runnersModal');
     });
-    
-    document.getElementById('closeRunnersModal').addEventListener('click', () => {
-        hideModal('runnersModal');
-    });
-    
-    document.getElementById('cancelRunnersModal').addEventListener('click', () => {
-        hideModal('runnersModal');
-    });
-    
-    document.getElementById('confirmRunnersModal').addEventListener('click', () => {
+    addSafeEventListener('closeRunnersModal', 'click', () => hideModal('runnersModal'));
+    addSafeEventListener('cancelRunnersModal', 'click', () => hideModal('runnersModal'));
+    addSafeEventListener('confirmRunnersModal', 'click', () => {
         updateRunnersFromModal();
         hideModal('runnersModal');
     });
-    
-    // ボトムナビゲーション
-    document.getElementById('navHistory').addEventListener('click', () => {
+
+    addSafeEventListener('navHistory', 'click', () => {
         displayPitchHistory(currentMatch);
         showScreen('pitchHistoryScreen');
     });
-    
-    document.getElementById('navCurrentAB').addEventListener('click', () => {
+    addSafeEventListener('navCurrentAB', 'click', () => {
         displayCurrentAtBat();
         showScreen('currentAtBatScreen');
     });
-    
-    document.getElementById('navSettings').addEventListener('click', () => {
-        // 設定画面へ
+    addSafeEventListener('navSettings', 'click', () => {
         showToast('設定画面はまだ実装中です');
     });
-    
-    // 履歴画面から戻る
-    document.getElementById('backFromHistory').addEventListener('click', () => {
-        showScreen('gameInputScreen');
-    });
-    
-    document.getElementById('backFromCurrentAB').addEventListener('click', () => {
-        showScreen('gameInputScreen');
-    });
-    
-    // 試合終了画面
-    document.getElementById('saveMatchData').addEventListener('click', () => {
+    addSafeEventListener('backFromHistory', 'click', () => showScreen('gameInputScreen'));
+    addSafeEventListener('backFromCurrentAB', 'click', () => showScreen('gameInputScreen'));
+
+    addSafeEventListener('saveMatchData', 'click', () => {
         addCompletedMatch(currentMatch);
         clearCurrentMatch();
         currentMatch = null;
         showToast('試合データを保存しました');
         showScreen('homeScreen');
     });
-    
-    document.getElementById('returnHome').addEventListener('click', () => {
-        showScreen('homeScreen');
-    });
-    
-    // 分析画面
-    document.getElementById('analysisMatchSelect').addEventListener('change', (e) => {
+    addSafeEventListener('returnHome', 'click', () => showScreen('homeScreen'));
+
+    addSafeEventListener('analysisMatchSelect', 'change', (e) => {
         if (e.target.value) {
             loadMatchAnalysis(e.target.value);
         }
     });
-    
-    document.getElementById('directionBatterSelect').addEventListener('change', (e) => {
+    addSafeEventListener('directionBatterSelect', 'change', (e) => {
         if (e.target.value && currentMatch) {
             displayHitDirectionAnalysis(currentMatch, e.target.value);
             drawFieldChart(currentMatch, e.target.value);
         }
     });
-    
-    document.getElementById('courseBatterSelect').addEventListener('change', (e) => {
+    addSafeEventListener('courseBatterSelect', 'change', (e) => {
         if (e.target.value && currentMatch) {
             displayCourseAnalysis(currentMatch, e.target.value);
         }
     });
-    
-    document.getElementById('backFromAnalysis').addEventListener('click', () => {
-        showScreen('homeScreen');
-    });
-    
-    // 過去の試合画面
-    document.getElementById('backFromPastGames').addEventListener('click', () => {
-        showScreen('homeScreen');
-    });
-    
-    // 選手管理画面
-    document.getElementById('backFromPlayerMgmt').addEventListener('click', () => {
-        showScreen('homeScreen');
-    });
+    addSafeEventListener('backFromAnalysis', 'click', () => showScreen('homeScreen'));
+    addSafeEventListener('backFromPastGames', 'click', () => showScreen('homeScreen'));
+    addSafeEventListener('backFromPlayerMgmt', 'click', () => showScreen('homeScreen'));
 }
 
 /**
@@ -286,22 +268,20 @@ function validateMatchSetup() {
  * チーム設定バリデーション
  */
 function validateTeamSetup() {
-    const ownTeamName = document.getElementById('ownTeamName').value;
-    const opponentTeamName = document.getElementById('opponentTeamName').value;
-    
-    if (!ownTeamName || !opponentTeamName) {
-        showToast('チーム名を入力してください');
+    const ownErrors = validateSingleTeamSetup('own', true);
+    if (ownErrors.length > 0) {
+        switchTab('own-team');
+        showToast(ownErrors[0]);
         return false;
     }
-    
-    const ownLineup = document.getElementById('ownTeamLineup').querySelectorAll('.player-item');
-    const opponentLineup = document.getElementById('opponentTeamLineup').querySelectorAll('.player-item');
-    
-    if (ownLineup.length !== 9 || opponentLineup.length !== 9) {
-        showToast('スタメンは9人設定してください');
+
+    const opponentErrors = validateSingleTeamSetup('opponent', true);
+    if (opponentErrors.length > 0) {
+        switchTab('opponent-team');
+        showToast(opponentErrors[0]);
         return false;
     }
-    
+
     return true;
 }
 
@@ -309,6 +289,9 @@ function validateTeamSetup() {
  * 試合を開始
  */
 function startGame() {
+    const ownTeamData = getTeamSetupData('own');
+    const opponentTeamData = getTeamSetupData('opponent');
+
     // 試合データ初期化
     currentMatch = initializeMatchData();
     
@@ -320,32 +303,14 @@ function startGame() {
     currentMatch.matchInfo.order = document.querySelector('input[name="order"]:checked').value;
     
     // チーム情報を設定
-    currentMatch.ownTeam.name = document.getElementById('ownTeamName').value;
-    currentMatch.opponentTeam.name = document.getElementById('opponentTeamName').value;
-    
-    // スタメンを設定
-    const ownLineup = Array.from(document.getElementById('ownTeamLineup').querySelectorAll('.player-item')).map((item, index) => {
-        return {
-            id: item.getAttribute('data-player-id'),
-            name: item.querySelector('.player-item-name').textContent,
-            number: item.querySelector('.player-item-number').textContent,
-            battingOrder: index + 1,
-            position: item.getAttribute('data-position') || 'DH'
-        };
-    });
-    
-    const opponentLineup = Array.from(document.getElementById('opponentTeamLineup').querySelectorAll('.player-item')).map((item, index) => {
-        return {
-            id: item.getAttribute('data-player-id'),
-            name: item.querySelector('.player-item-name').textContent,
-            number: item.querySelector('.player-item-number').textContent,
-            battingOrder: index + 1,
-            position: item.getAttribute('data-position') || 'DH'
-        };
-    });
-    
-    currentMatch.ownTeam.lineup = ownLineup;
-    currentMatch.opponentTeam.lineup = opponentLineup;
+    currentMatch.ownTeam.name = ownTeamData.name;
+    currentMatch.opponentTeam.name = opponentTeamData.name;
+    currentMatch.ownTeam.lineup = buildGameLineup(ownTeamData);
+    currentMatch.opponentTeam.lineup = buildGameLineup(opponentTeamData);
+    currentMatch.ownTeam.bench = buildGameBench(ownTeamData);
+    currentMatch.opponentTeam.bench = buildGameBench(opponentTeamData);
+    currentMatch.ownTeam.pitcher = buildGamePitcher(ownTeamData);
+    currentMatch.opponentTeam.pitcher = buildGamePitcher(opponentTeamData);
     
     // ゲーム状態を初期化
     currentMatch.gameState.isActive = true;
@@ -414,11 +379,11 @@ function updatePlayerDisplay() {
     }
     
     // 現在の投手
-    if (oppositeTeam.lineup[gs.currentPitcherIndex]) {
-        const pitcher = oppositeTeam.lineup[gs.currentPitcherIndex];
+    const pitcher = oppositeTeam.pitcher || oppositeTeam.lineup[gs.currentPitcherIndex];
+    if (pitcher) {
         document.getElementById('pitcherNumber').textContent = pitcher.number;
         document.getElementById('pitcherName').textContent = pitcher.name;
-        document.getElementById('pitcherMeta').textContent = '投手';
+        document.getElementById('pitcherMeta').textContent = `${getBattingName(pitcher.batting)} / ${getThrowName(pitcher.throw)}`;
     }
 }
 
@@ -439,25 +404,23 @@ function updateRunnersDisplay() {
  * チーム設定画面を初期化
  */
 function initializeTeamSetup() {
-    // 前のデータをクリア
-    document.getElementById('ownTeamLineup').innerHTML = '';
-    document.getElementById('ownTeamBench').innerHTML = '';
-    document.getElementById('opponentTeamLineup').innerHTML = '';
-    document.getElementById('opponentTeamBench').innerHTML = '';
+    UIState.reset();
+    UIState.setTempTeamData('own', createEmptyTeamSetupData('own'));
+    UIState.setTempTeamData('opponent', createEmptyTeamSetupData('opponent'));
+    document.getElementById('ownTeamName').value = '';
+    document.getElementById('opponentTeamName').value = '';
+    switchTab('own-team');
+    renderTeamSetup();
 }
 
 /**
  * 選手モーダルを開く
  */
-function openPlayerModal(targetListId) {
-    document.getElementById('playerModalTitle').textContent = '選手を追加';
-    document.getElementById('playerNumber').value = '';
-    document.getElementById('playerName').value = '';
-    document.getElementById('playerBatting').value = '';
-    document.getElementById('playerThrow').value = '';
-    document.getElementById('playerPosition').value = '';
-    
-    document.getElementById('confirmPlayerModal').setAttribute('data-target', targetListId);
+function openPlayerModal(teamType) {
+    getTeamSetupData(teamType);
+    UIState.setEditingTeam(teamType);
+    resetPlayerModalState();
+    document.getElementById('playerModalTitle').textContent = `${teamType === 'own' ? '自チーム' : '相手チーム'}の選手を追加`;
     showModal('playerModal');
 }
 
@@ -465,32 +428,523 @@ function openPlayerModal(targetListId) {
  * モーダルから選手データを保存
  */
 function savePlayerFromModal() {
-    const number = document.getElementById('playerNumber').value;
+    const teamType = UIState.getEditingTeam();
     const name = document.getElementById('playerName').value;
     const batting = document.getElementById('playerBatting').value;
     const throw_ = document.getElementById('playerThrow').value;
-    const position = document.getElementById('playerPosition').value;
-    const targetListId = document.getElementById('confirmPlayerModal').getAttribute('data-target');
-    
-    if (!number || !name || !batting || !position) {
-        showToast('全ての項目を入力してください');
+
+    if (!teamType) {
+        showToast('追加先のチームを選び直してください');
+        closePlayerModal();
         return;
     }
-    
+
+    if (!name || !batting || !throw_) {
+        showToast('選手名・打席・投げを入力してください');
+        return;
+    }
+
+    const playerType = document.getElementById('playerModal').dataset.playerType || 'fielder';
+    const teamData = getTeamSetupData(teamType);
     const player = {
+        ...initializePlayerData(),
         id: generateId(),
-        number,
-        name,
+        name: name.trim(),
         batting,
         throw: throw_,
-        position
+        playerType,
+        playerTypes: [playerType]
     };
-    
-    const isOpponent = targetListId.includes('opponent');
-    addPlayerToList(player, targetListId.includes('bench') ? 'bench' : 'lineup', isOpponent);
-    
+
+    teamData.players.push(player);
+    teamData.confirmed = false;
+    renderTeamSetup();
+    closePlayerModal();
+    showToast(`${player.name}を登録しました`);
+}
+
+function getTeamSetupData(teamType) {
+    let teamData = UIState.getTempTeamData(teamType);
+    if (!teamData) {
+        teamData = createEmptyTeamSetupData(teamType);
+        UIState.setTempTeamData(teamType, teamData);
+    }
+    return teamData;
+}
+
+function updateTeamName(teamType, name) {
+    const teamData = getTeamSetupData(teamType);
+    teamData.name = name;
+    teamData.confirmed = false;
+    updateOrderSheetTitle(teamType);
+}
+
+function updateOrderSheetTitle(teamType) {
+    const teamData = getTeamSetupData(teamType);
+    const title = document.getElementById(teamType === 'own' ? 'ownOrderSheetTeamName' : 'opponentOrderSheetTeamName');
+    if (title) {
+        title.textContent = teamData.name || (teamType === 'own' ? '自チーム' : '相手チーム');
+    }
+}
+
+function resetPlayerModalState() {
+    const modal = document.getElementById('playerModal');
+    modal.dataset.playerType = 'fielder';
+    document.getElementById('playerName').value = '';
+    document.getElementById('playerBatting').value = '';
+    document.getElementById('playerThrow').value = '';
+    setPlayerModalType('fielder');
+}
+
+function closePlayerModal() {
+    resetPlayerModalState();
+    UIState.setEditingTeam(null);
     hideModal('playerModal');
-    showToast(name + 'を追加しました');
+}
+
+function setPlayerModalType(playerType) {
+    const modal = document.getElementById('playerModal');
+    modal.dataset.playerType = playerType;
+    document.querySelectorAll('.player-type-tab').forEach(button => {
+        button.classList.toggle('active', button.getAttribute('data-player-type') === playerType);
+    });
+
+    const description = document.getElementById('playerTypeDescription');
+    if (description) {
+        description.textContent = playerType === 'pitcher'
+            ? '投手として登録します。内部では playerType に加えて playerTypes 配列も保持し、将来の二刀流拡張に備えます。'
+            : '野手として登録します。内部では playerType に加えて playerTypes 配列も保持し、将来の二刀流拡張に備えます。';
+    }
+}
+
+function renderTeamSetup() {
+    ['own', 'opponent'].forEach(teamType => {
+        const teamData = getTeamSetupData(teamType);
+        updateOrderSheetTitle(teamType);
+        renderRegisteredPlayers(teamType, teamData);
+        renderLineupRows(teamType, teamData);
+        renderPitcherSection(teamType, teamData);
+        renderBenchRows(teamType, teamData);
+    });
+}
+
+function renderRegisteredPlayers(teamType, teamData) {
+    const container = document.getElementById(teamType === 'own' ? 'ownTeamPlayersMaster' : 'opponentTeamPlayersMaster');
+    if (!container) return;
+
+    container.innerHTML = '';
+    if (teamData.players.length === 0) {
+        container.innerHTML = '<div class="empty-state">まだ選手が登録されていません</div>';
+        return;
+    }
+
+    teamData.players.forEach(player => {
+        const item = document.createElement('div');
+        item.className = 'player-master-item';
+
+        const info = document.createElement('div');
+        info.className = 'player-master-info';
+        info.innerHTML = `
+            <div class="player-item-name">${player.name}</div>
+            <div class="player-item-meta">${player.playerType === 'pitcher' ? '投手' : '野手'} / ${getBattingName(player.batting)} / ${getThrowName(player.throw)}</div>
+        `;
+
+        const badge = document.createElement('div');
+        badge.className = `player-type-badge ${player.playerType}`;
+        badge.textContent = player.playerType === 'pitcher' ? '投手' : '野手';
+
+        const removeButton = document.createElement('button');
+        removeButton.className = 'player-item-btn remove';
+        removeButton.textContent = '削除';
+        removeButton.addEventListener('click', () => removeRegisteredPlayer(teamType, player.id));
+
+        const actions = document.createElement('div');
+        actions.className = 'player-item-actions';
+        actions.appendChild(removeButton);
+
+        item.appendChild(badge);
+        item.appendChild(info);
+        item.appendChild(actions);
+        container.appendChild(item);
+    });
+}
+
+function renderLineupRows(teamType, teamData) {
+    const container = document.getElementById(teamType === 'own' ? 'ownTeamLineup' : 'opponentTeamLineup');
+    if (!container) return;
+
+    container.innerHTML = '';
+    teamData.lineup.forEach((slot, index) => {
+        const row = document.createElement('div');
+        row.className = 'order-row-card';
+
+        const order = document.createElement('div');
+        order.className = 'order-slot-label';
+        order.textContent = `${slot.battingOrder}`;
+
+        const playerSelect = createPlayerSelect(teamType, slot.playerId, { type: 'lineup', index });
+        playerSelect.addEventListener('change', (e) => {
+            slot.playerId = e.target.value;
+            if (!slot.playerId) {
+                slot.position = '';
+            }
+            teamData.confirmed = false;
+            renderTeamSetup();
+        });
+
+        const positionSelect = createPositionSelect(teamType, slot.position, index);
+        positionSelect.disabled = !slot.playerId;
+        positionSelect.addEventListener('change', (e) => {
+            slot.position = e.target.value;
+            teamData.confirmed = false;
+            renderTeamSetup();
+        });
+
+        const player = findTeamPlayer(teamData, slot.playerId);
+        const summary = document.createElement('div');
+        summary.className = 'order-player-summary';
+        summary.innerHTML = `
+            <span class="order-player-name">${player ? player.name : '未選択'}</span>
+            <span class="order-player-meta">${player ? `${getBattingName(player.batting)} / ${getThrowName(player.throw)}` : '打席・利き腕を表示'}</span>
+        `;
+
+        row.appendChild(order);
+        row.appendChild(buildFieldGroup('選手名', playerSelect, 'order-field wide'));
+        row.appendChild(buildFieldGroup('守備', positionSelect, 'order-field'));
+        row.appendChild(summary);
+        container.appendChild(row);
+    });
+}
+
+function renderPitcherSection(teamType, teamData) {
+    const container = document.getElementById(teamType === 'own' ? 'ownTeamPitcher' : 'opponentTeamPitcher');
+    if (!container) return;
+
+    container.innerHTML = '';
+    const row = document.createElement('div');
+    row.className = 'order-row-card pitcher-row';
+
+    const label = document.createElement('div');
+    label.className = 'order-slot-label pitcher';
+    label.textContent = 'P';
+
+    const select = createPlayerSelect(teamType, teamData.pitcherId, { type: 'pitcher' }, player => player.playerTypes.includes('pitcher'));
+    select.addEventListener('change', (e) => {
+        teamData.pitcherId = e.target.value;
+        teamData.confirmed = false;
+        renderTeamSetup();
+    });
+
+    const player = findTeamPlayer(teamData, teamData.pitcherId);
+    const summary = document.createElement('div');
+    summary.className = 'order-player-summary';
+    summary.innerHTML = `
+        <span class="order-player-name">${player ? player.name : '未選択'}</span>
+        <span class="order-player-meta">${player ? `投手 / ${getBattingName(player.batting)} / ${getThrowName(player.throw)}` : '投手登録済み選手から選択'}</span>
+    `;
+
+    row.appendChild(label);
+    row.appendChild(buildFieldGroup('選手名', select, 'order-field wide'));
+    row.appendChild(summary);
+    container.appendChild(row);
+}
+
+function renderBenchRows(teamType, teamData) {
+    const container = document.getElementById(teamType === 'own' ? 'ownTeamBench' : 'opponentTeamBench');
+    if (!container) return;
+
+    container.innerHTML = '';
+    if (teamData.bench.length === 0) {
+        container.innerHTML = '<div class="empty-state compact">控え選手はまだ追加されていません</div>';
+        return;
+    }
+
+    teamData.bench.forEach((benchSlot, index) => {
+        const row = document.createElement('div');
+        row.className = 'order-row-card bench-row';
+
+        const label = document.createElement('div');
+        label.className = 'order-slot-label bench';
+        label.textContent = `控${index + 1}`;
+
+        const select = createPlayerSelect(teamType, benchSlot.playerId, { type: 'bench', index });
+        select.addEventListener('change', (e) => {
+            benchSlot.playerId = e.target.value;
+            teamData.confirmed = false;
+            renderTeamSetup();
+        });
+
+        const player = findTeamPlayer(teamData, benchSlot.playerId);
+        const summary = document.createElement('div');
+        summary.className = 'order-player-summary';
+        summary.innerHTML = `
+            <span class="order-player-name">${player ? player.name : '未選択'}</span>
+            <span class="order-player-meta">${player ? `${getBattingName(player.batting)} / ${getThrowName(player.throw)}` : '控え選手を選択'}</span>
+        `;
+
+        const removeButton = document.createElement('button');
+        removeButton.className = 'player-item-btn remove';
+        removeButton.textContent = '削除';
+        removeButton.addEventListener('click', () => removeBenchSlot(teamType, index));
+
+        row.appendChild(label);
+        row.appendChild(buildFieldGroup('選手名', select, 'order-field wide'));
+        row.appendChild(summary);
+        row.appendChild(removeButton);
+        container.appendChild(row);
+    });
+}
+
+function buildFieldGroup(labelText, element, className = 'order-field') {
+    const wrapper = document.createElement('div');
+    wrapper.className = className;
+
+    const label = document.createElement('label');
+    label.className = 'order-field-label';
+    label.textContent = labelText;
+
+    wrapper.appendChild(label);
+    wrapper.appendChild(element);
+    return wrapper;
+}
+
+function createPlayerSelect(teamType, currentPlayerId, context, filterFn = () => true) {
+    const teamData = getTeamSetupData(teamType);
+    const select = document.createElement('select');
+    select.className = 'form-input';
+    select.innerHTML = '<option value="">選択してください</option>';
+
+    const assignedIds = collectAssignedPlayerIds(teamData, context);
+    teamData.players
+        .filter(player => filterFn(player))
+        .forEach(player => {
+            if (assignedIds.has(player.id) && player.id !== currentPlayerId) {
+                return;
+            }
+
+            const option = document.createElement('option');
+            option.value = player.id;
+            option.textContent = `${player.name} (${getBattingName(player.batting)} / ${getThrowName(player.throw)})`;
+            option.selected = player.id === currentPlayerId;
+            select.appendChild(option);
+        });
+
+    return select;
+}
+
+function createPositionSelect(teamType, currentPosition, lineupIndex) {
+    const select = document.createElement('select');
+    select.className = 'form-input';
+    select.innerHTML = '<option value="">選択してください</option>';
+
+    const teamData = getTeamSetupData(teamType);
+    const usedPositions = collectUsedPositions(teamData, lineupIndex);
+    STARTER_POSITIONS.forEach(position => {
+        const option = document.createElement('option');
+        option.value = position;
+        option.textContent = getPositionName(position);
+        option.selected = position === currentPosition;
+        option.disabled = usedPositions.has(position) && position !== currentPosition && position !== 'DH';
+        select.appendChild(option);
+    });
+
+    return select;
+}
+
+function collectAssignedPlayerIds(teamData, context) {
+    const assignedIds = new Set();
+
+    teamData.lineup.forEach((slot, index) => {
+        if (!slot.playerId) return;
+        if (context.type === 'lineup' && context.index === index) return;
+        assignedIds.add(slot.playerId);
+    });
+
+    teamData.bench.forEach((slot, index) => {
+        if (!slot.playerId) return;
+        if (context.type === 'bench' && context.index === index) return;
+        assignedIds.add(slot.playerId);
+    });
+
+    if (teamData.pitcherId && context.type !== 'pitcher') {
+        assignedIds.add(teamData.pitcherId);
+    }
+
+    return assignedIds;
+}
+
+function collectUsedPositions(teamData, currentIndex) {
+    const usedPositions = new Set();
+    teamData.lineup.forEach((slot, index) => {
+        if (!slot.position || index === currentIndex || !DUPLICATE_LOCKED_POSITIONS.includes(slot.position)) {
+            return;
+        }
+        usedPositions.add(slot.position);
+    });
+    return usedPositions;
+}
+
+function addBenchSlot(teamType) {
+    const teamData = getTeamSetupData(teamType);
+    teamData.bench.push({ playerId: '' });
+    teamData.confirmed = false;
+    renderTeamSetup();
+}
+
+function removeBenchSlot(teamType, benchIndex) {
+    const teamData = getTeamSetupData(teamType);
+    teamData.bench.splice(benchIndex, 1);
+    teamData.confirmed = false;
+    renderTeamSetup();
+}
+
+function removeRegisteredPlayer(teamType, playerId) {
+    const teamData = getTeamSetupData(teamType);
+    teamData.players = teamData.players.filter(player => player.id !== playerId);
+    teamData.lineup.forEach(slot => {
+        if (slot.playerId === playerId) {
+            slot.playerId = '';
+            slot.position = '';
+        }
+    });
+    teamData.bench = teamData.bench.filter(slot => slot.playerId !== playerId);
+    if (teamData.pitcherId === playerId) {
+        teamData.pitcherId = '';
+    }
+    teamData.confirmed = false;
+    renderTeamSetup();
+}
+
+function resetOrderSelection(teamType) {
+    const teamData = getTeamSetupData(teamType);
+    teamData.lineup = createEmptyTeamSetupData(teamType).lineup;
+    teamData.bench = [];
+    teamData.pitcherId = '';
+    teamData.confirmed = false;
+    renderTeamSetup();
+    showToast(`${teamType === 'own' ? '自チーム' : '相手チーム'}のオーダーをリセットしました`);
+}
+
+function confirmTeamOrder(teamType) {
+    const errors = validateSingleTeamSetup(teamType, false);
+    if (errors.length > 0) {
+        showToast(errors[0]);
+        return false;
+    }
+
+    const teamData = getTeamSetupData(teamType);
+    teamData.confirmed = true;
+    renderTeamSetup();
+    showToast(`${teamType === 'own' ? '自チーム' : '相手チーム'}のオーダーを確定しました`);
+    return true;
+}
+
+function validateSingleTeamSetup(teamType, requireConfirmed = false) {
+    const teamData = getTeamSetupData(teamType);
+    const teamLabel = teamType === 'own' ? '自チーム' : '相手チーム';
+    const errors = [];
+
+    if (!teamData.name.trim()) {
+        errors.push(`${teamLabel}名を入力してください`);
+    }
+
+    if (teamData.players.length === 0) {
+        errors.push(`${teamLabel}の登録済み選手がありません`);
+    }
+
+    teamData.lineup.forEach((slot, index) => {
+        if (!slot.playerId) {
+            errors.push(`${teamLabel}の${index + 1}番打者が未設定です`);
+            return;
+        }
+        if (!slot.position) {
+            errors.push(`${teamLabel}の${index + 1}番の守備位置を選択してください`);
+        }
+    });
+
+    const duplicatePlayer = findDuplicateAssignedPlayer(teamData);
+    if (duplicatePlayer) {
+        errors.push(`${teamLabel}で「${duplicatePlayer.name}」が重複登録されています`);
+    }
+
+    const duplicatePosition = findDuplicatePosition(teamData);
+    if (duplicatePosition) {
+        errors.push(`${teamLabel}の${getPositionName(duplicatePosition)}が重複しています`);
+    }
+
+    if (!teamData.pitcherId) {
+        errors.push(`${teamLabel}の投手が設定されていません`);
+    }
+
+    if (requireConfirmed && !teamData.confirmed) {
+        errors.push(`${teamLabel}のオーダーを「この内容で決定」してください`);
+    }
+
+    return Array.from(new Set(errors));
+}
+
+function findDuplicateAssignedPlayer(teamData) {
+    const counts = new Map();
+    const register = (playerId) => {
+        if (!playerId) return;
+        counts.set(playerId, (counts.get(playerId) || 0) + 1);
+    };
+
+    teamData.lineup.forEach(slot => register(slot.playerId));
+    teamData.bench.forEach(slot => register(slot.playerId));
+    register(teamData.pitcherId);
+
+    const duplicateId = Array.from(counts.entries()).find(([, count]) => count > 1)?.[0];
+    return duplicateId ? findTeamPlayer(teamData, duplicateId) : null;
+}
+
+function findDuplicatePosition(teamData) {
+    const used = new Set();
+    for (const slot of teamData.lineup) {
+        if (!slot.position || !DUPLICATE_LOCKED_POSITIONS.includes(slot.position)) {
+            continue;
+        }
+        if (used.has(slot.position)) {
+            return slot.position;
+        }
+        used.add(slot.position);
+    }
+    return null;
+}
+
+function findTeamPlayer(teamData, playerId) {
+    return teamData.players.find(player => player.id === playerId) || null;
+}
+
+function buildGameLineup(teamData) {
+    return teamData.lineup.map(slot => {
+        const player = findTeamPlayer(teamData, slot.playerId);
+        return buildGamePlayer(player, {
+            battingOrder: slot.battingOrder,
+            position: slot.position
+        });
+    });
+}
+
+function buildGameBench(teamData) {
+    return teamData.bench
+        .map(slot => findTeamPlayer(teamData, slot.playerId))
+        .filter(Boolean)
+        .map(player => buildGamePlayer(player));
+}
+
+function buildGamePitcher(teamData) {
+    const player = findTeamPlayer(teamData, teamData.pitcherId);
+    return player ? buildGamePlayer(player, { position: 'P' }) : null;
+}
+
+function buildGamePlayer(player, overrides = {}) {
+    return {
+        ...initializePlayerData(),
+        ...deepCopy(player),
+        number: player.number || '-',
+        ...overrides
+    };
 }
 
 /**
@@ -512,12 +966,16 @@ function recordPitchData() {
     const speed = document.getElementById('pitchSpeed').value;
     
     const pitchData = initializePitchData();
+    const battingTeam = currentMatch.gameState.order === 0 ? currentMatch.ownTeam : currentMatch.opponentTeam;
+    const defendingTeam = currentMatch.gameState.order === 0 ? currentMatch.opponentTeam : currentMatch.ownTeam;
     pitchData.inning = currentMatch.gameState.inning;
     pitchData.order = currentMatch.gameState.order;
     pitchData.pitchType = pitchType;
     pitchData.speed = speed ? parseFloat(speed) : null;
     pitchData.result = result;
     pitchData.perspective = currentPerspective;
+    pitchData.batter = battingTeam.lineup[currentMatch.gameState.currentBatterIndex] || null;
+    pitchData.pitcher = defendingTeam.pitcher || defendingTeam.lineup[currentMatch.gameState.currentPitcherIndex] || null;
     
     // コース情報
     const selectedCourse = document.querySelector('[data-row][data-col].selected');
