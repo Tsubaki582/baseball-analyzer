@@ -9,6 +9,7 @@ let selectedHitData = null;
 let selectedDirectionData = null;
 let selectedRunnerBase = null;
 let transitionTimer = null;
+let atBatStartRunners = null;
 
 const STARTER_POSITIONS = ['P', 'C', '1B', '2B', '3B', 'SS', 'LF', 'CF', 'RF', 'DH'];
 const DUPLICATE_LOCKED_POSITIONS = STARTER_POSITIONS.filter(position => position !== 'DH');
@@ -417,6 +418,7 @@ function startGame() {
     currentMatch.gameState.order = currentMatch.matchInfo.order === 'home' ? 0 : 1;
     currentMatch.gameState.batterIndices = { top: 0, bottom: 0 };
     currentMatch.gameState.currentBatterIndex = 0;
+    atBatStartRunners = null;
     
     // 保存
     saveCurrentMatch(currentMatch);
@@ -1182,6 +1184,9 @@ function recordPitchData() {
     
     // ゲーム状態を更新
     const gs = currentMatch.gameState;
+    if (atBatStartRunners === null && gs.balls === 0 && gs.strikes === 0) {
+        atBatStartRunners = deepCopy(gs.runners);
+    }
     
     if (result === 'look' || result === 'swing') {
         gs.strikes++;
@@ -1232,7 +1237,7 @@ function processAtBatResult(result) {
     if (!currentMatch) return;
     
     const gs = currentMatch.gameState;
-    const runnersBeforePlay = deepCopy(gs.runners);
+    const runnersAtBatStart = atBatStartRunners ? deepCopy(atBatStartRunners) : deepCopy(gs.runners);
     const battingTeam = getBattingTeam();
     const batterIndex = getCurrentBatterIndex(gs);
     const batter = battingTeam?.lineup[batterIndex] || null;
@@ -1267,7 +1272,7 @@ function processAtBatResult(result) {
         result,
         hitType: selectedHitData,
         direction: selectedDirectionData,
-        runners: runnersBeforePlay,
+        runners: runnersAtBatStart,
         runsScored
     });
 
@@ -1279,6 +1284,7 @@ function processAtBatResult(result) {
     
     gs.strikes = 0;
     gs.balls = 0;
+    atBatStartRunners = null;
 }
 
 /**
@@ -1298,6 +1304,7 @@ function endInning() {
     gs.balls = 0;
     gs.strikes = 0;
     gs.runners = { base1: null, base2: null, base3: null };
+    atBatStartRunners = null;
     setCurrentBatterIndex(gs, getCurrentBatterIndex(gs));
     const defendingPitcher = getDefendingTeam()?.pitcher?.name || '-';
     const battingTeam = getBattingTeam();
@@ -1327,6 +1334,7 @@ function advanceBatter(showAnnouncement = false) {
         nextIndex = 0;
     }
     setCurrentBatterIndex(gs, nextIndex);
+    atBatStartRunners = null;
 
     if (showAnnouncement) {
         const nextBatter = team.lineup[nextIndex];
@@ -1365,9 +1373,11 @@ function showTransitionOverlay(message, duration = 1400) {
         clearTimeout(transitionTimer);
     }
     messageNode.textContent = message;
+    overlay.setAttribute('aria-hidden', 'false');
     overlay.classList.add('active');
     transitionTimer = setTimeout(() => {
         overlay.classList.remove('active');
+        overlay.setAttribute('aria-hidden', 'true');
     }, duration);
 }
 
@@ -1534,6 +1544,7 @@ function moveBatterBy(step, showAnnouncement) {
     const currentIndex = getCurrentBatterIndex(gs);
     const nextIndex = (currentIndex + step + lineupLength) % lineupLength;
     setCurrentBatterIndex(gs, nextIndex);
+    atBatStartRunners = null;
     gs.balls = 0;
     gs.strikes = 0;
     saveCurrentMatch(currentMatch);
@@ -1556,6 +1567,7 @@ function moveHalfInning(step) {
     gs.balls = 0;
     gs.strikes = 0;
     gs.runners = { base1: null, base2: null, base3: null };
+    atBatStartRunners = null;
     setCurrentBatterIndex(gs, getCurrentBatterIndex(gs));
     saveCurrentMatch(currentMatch);
     updateGameDisplay();
@@ -1585,6 +1597,7 @@ function changeHalfInning(mode) {
     gs.balls = 0;
     gs.strikes = 0;
     gs.runners = { base1: null, base2: null, base3: null };
+    atBatStartRunners = null;
     setCurrentBatterIndex(gs, getCurrentBatterIndex(gs));
     saveCurrentMatch(currentMatch);
     updateGameDisplay();
@@ -1600,6 +1613,7 @@ function moveToInning(inning) {
     gs.balls = 0;
     gs.strikes = 0;
     gs.runners = { base1: null, base2: null, base3: null };
+    atBatStartRunners = null;
     setCurrentBatterIndex(gs, getCurrentBatterIndex(gs));
     saveCurrentMatch(currentMatch);
     updateGameDisplay();
