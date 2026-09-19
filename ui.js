@@ -23,8 +23,12 @@ function showScreen(screenId) {
  */
 function showModal(modalId) {
     const modal = document.getElementById(modalId);
+    const overlay = document.getElementById('modalOverlay');
     if (modal) {
         modal.classList.add('active');
+    }
+    if (overlay) {
+        overlay.classList.add('active');
     }
 }
 
@@ -33,8 +37,12 @@ function showModal(modalId) {
  */
 function hideModal(modalId) {
     const modal = document.getElementById(modalId);
+    const overlay = document.getElementById('modalOverlay');
     if (modal) {
         modal.classList.remove('active');
+    }
+    if (!document.querySelector('.modal.active') && overlay) {
+        overlay.classList.remove('active');
     }
 }
 
@@ -318,7 +326,6 @@ function addPlayerToList(player, listType, isOpponent = false) {
             <div class="player-item-meta">${getBattingName(player.batting)} / ${getPositionName(player.position)}</div>
         </div>
         <div class="player-item-actions">
-            <button class="player-item-btn edit" onclick="editPlayer('${player.id}', ${isOpponent})">編集</button>
             <button class="player-item-btn remove" onclick="removePlayerFromList('${player.id}', '${listId}')">削除</button>
         </div>
     `;

@@ -26,12 +26,14 @@ function initializeMatchData() {
         ownTeam: {
             name: '',
             lineup: [],  // スタメン9人
-            bench: []    // 控え選手
+            bench: [],   // 控え選手
+            pitcher: null
         },
         opponentTeam: {
             name: '',
             lineup: [],
-            bench: []
+            bench: [],
+            pitcher: null
         },
         gameState: {
             inning: 1,
@@ -65,6 +67,8 @@ function initializePlayerData() {
         name: '',
         batting: '',      // right, left, switch
         throw: '',        // right, left
+        playerType: 'fielder',
+        playerTypes: ['fielder'],  // 将来の二刀流対応に備え、複数適性を持てる配列も保持する
         position: '',     // P, C, 1B, 2B, 3B, SS, LF, CF, RF, DH
         atBats: 0,
         hits: 0,
