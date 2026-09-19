@@ -182,14 +182,12 @@ function selectCourse(row, col, perspective) {
     // 前の選択を削除
     document.querySelectorAll('[data-perspective="' + perspective + '"]').forEach(cell => {
         cell.classList.remove('selected');
-        cell.setAttribute('fill', cell.classList.contains('strike-zone-cell') ? '#f3f8ff' : '#ffffff');
     });
     
     // 新しい選択を追加
     const selected = document.querySelector(`[data-row="${row}"][data-col="${col}"][data-perspective="${perspective}"]`);
     if (selected) {
         selected.classList.add('selected');
-        selected.setAttribute('fill', '#0066cc');
         document.getElementById('selectedCourse').textContent = getCourseName(row, col);
         if (typeof selectedCourseData !== 'undefined') {
             selectedCourseData = { row, col, perspective };
